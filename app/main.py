@@ -22,19 +22,22 @@ from app.admin import AdminAuth, UserAdmin, NilaiAdmin, MataPelajaranAdmin, Kela
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
-    db = SessionLocal()
     try:
-        if db.query(User).count() == 0:
-            admin_user = User(
-                username="admin",
-                password_hash=hash_password("admin123"),
-                role="admin",
-                nama="Administrator",
-            )
-            db.add(admin_user)
-            db.commit()
-    finally:
-        db.close()
+        db = SessionLocal()
+        try:
+            if db.query(User).count() == 0:
+                admin_user = User(
+                    username="admin",
+                    password_hash=hash_password("admin123"),
+                    role="admin",
+                    nama="Administrator",
+                )
+                db.add(admin_user)
+                db.commit()
+        finally:
+            db.close()
+    except Exception:
+        pass
     yield
 
 

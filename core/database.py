@@ -12,7 +12,7 @@ if DATABASE_URL.startswith("sqlite"):
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()
 else:
-    engine = create_engine(DATABASE_URL, connect_args={"client_encoding": "utf8"})
+    engine = create_engine(DATABASE_URL)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -30,8 +30,12 @@ def get_db():
 
 
 def init_db():
-    inspector = inspect(engine)
-    tables = inspector.get_table_names()
+    try:
+        inspector = inspect(engine)
+        tables = inspector.get_table_names()
+    except Exception:
+        return
+
     if tables:
         return
 
