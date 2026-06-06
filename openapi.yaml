@@ -1,0 +1,1565 @@
+openapi: "3.0.3"
+info:
+  title: Sistem Pengolahan Nilai Siswa API
+  description: >
+    API untuk aplikasi pengolahan nilai siswa.
+    Mendukung 3 role: admin, guru, siswa.
+    Formula: Nilai Akhir = (30% × Tugas) + (30% × UTS) + (40% × UAS).
+    Syarat Lulus: Nilai Akhir ≥ 70.
+  version: "1.1.0"
+  contact:
+    name: Developer
+    email: dev@sekolah.id
+
+servers:
+  - url: http://localhost:8000/api
+    description: Development server
+
+tags:
+  - name: Auth
+    description: Authentication endpoints
+  - name: Kelas
+    description: Class management (Admin CRUD)
+  - name: Mata Pelajaran
+    description: Subject management (Admin CRUD)
+  - name: Siswa
+    description: Student management (Admin CRUD)
+  - name: Guru
+    description: Teacher management (Admin CRUD)
+  - name: Guru Mengajar
+    description: Teaching assignments — guru + kelas + mata pelajaran
+  - name: Nilai
+    description: Grade management (Guru input, Siswa view)
+  - name: Laporan
+    description: Report generation
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token dari endpoint login
+
+  schemas:
+    # ── Generic ──
+    Error:
+      type: object
+      properties:
+        detail:
+          type: string
+          example: "Not found"
+      required:
+        - detail
+
+    Message:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Operasi berhasil"
+
+    # ── Auth ──
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          minLength: 1
+          example: "admin"
+        password:
+          type: string
+          minLength: 1
+          example: "admin123"
+      required:
+        - username
+        - password
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT access token
+          example: "eyJhbGciOiJIUzI1NiIs..."
+        user:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            username:
+              type: string
+              example: "admin"
+            role:
+              type: string
+              enum: [admin, guru, siswa]
+              example: "admin"
+            nama:
+              type: string
+              example: "Administrator"
+
+    ChangePasswordRequest:
+      type: object
+      properties:
+        old_password:
+          type: string
+          minLength: 1
+          example: "admin123"
+        new_password:
+          type: string
+          minLength: 6
+          description: Minimal 6 karakter
+          example: "newpass456"
+      required:
+        - old_password
+        - new_password
+
+    ResetPasswordRequest:
+      type: object
+      properties:
+        new_password:
+          type: string
+          minLength: 6
+          description: Minimal 6 karakter
+          example: "resetpass789"
+      required:
+        - new_password
+
+    # ── Kelas ──
+    Kelas:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        nama:
+          type: string
+          example: "X-A"
+        wali_kelas_id:
+          type: string
+          nullable: true
+          description: ID Guru yang menjadi wali kelas (opsional)
+          example: "G001"
+        wali_kelas:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+              example: "G001"
+            nama:
+              type: string
+              example: "Budi Santoso, S.Pd."
+      required:
+        - id
+        - nama
+
+    KelasCreate:
+      type: object
+      properties:
+        nama:
+          type: string
+          example: "X-A"
+        wali_kelas_id:
+          type: string
+          description: ID Guru wali kelas (opsional)
+          example: "G001"
+      required:
+        - nama
+
+    KelasUpdate:
+      type: object
+      properties:
+        nama:
+          type: string
+          example: "X-B"
+        wali_kelas_id:
+          type: string
+          nullable: true
+          example: "G002"
+
+    # ── Mata Pelajaran ──
+    MataPelajaran:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        nama:
+          type: string
+          example: "Matematika"
+      required:
+        - id
+        - nama
+
+    MataPelajaranCreate:
+      type: object
+      properties:
+        nama:
+          type: string
+          example: "Matematika"
+      required:
+        - nama
+
+    MataPelajaranUpdate:
+      type: object
+      properties:
+        nama:
+          type: string
+          example: "Matematika Wajib"
+
+    # ── Siswa ──
+    Siswa:
+      type: object
+      properties:
+        nis:
+          type: string
+          description: Nomor Induk Siswa (unique)
+          example: "20240001"
+        nama:
+          type: string
+          example: "Andi Pratama"
+        kelas_id:
+          type: integer
+          example: 1
+        kelas:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: integer
+              example: 1
+            nama:
+              type: string
+              example: "X-A"
+        user_id:
+          type: integer
+          nullable: true
+          example: 4
+      required:
+        - nis
+        - nama
+        - kelas_id
+
+    SiswaCreate:
+      type: object
+      properties:
+        nis:
+          type: string
+          example: "20240001"
+        nama:
+          type: string
+          example: "Andi Pratama"
+        kelas_id:
+          type: integer
+          description: ID Kelas (dari GET /api/kelas)
+          example: 1
+        username:
+          type: string
+          description: Username untuk login siswa
+          example: "20240001"
+        password:
+          type: string
+          description: Password untuk login siswa
+          example: "password123"
+      required:
+        - nis
+        - nama
+        - kelas_id
+        - username
+        - password
+
+    SiswaUpdate:
+      type: object
+      properties:
+        nama:
+          type: string
+          example: "Andi Pratama Updated"
+        kelas_id:
+          type: integer
+          example: 2
+
+    SiswaWithNilai:
+      allOf:
+        - $ref: '#/components/schemas/Siswa'
+        - type: object
+          properties:
+            nilai_list:
+              type: array
+              items:
+                $ref: '#/components/schemas/Nilai'
+
+    # ── Guru ──
+    Guru:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID Guru (unique)
+          example: "G001"
+        nama:
+          type: string
+          example: "Budi Santoso, S.Pd."
+        user_id:
+          type: integer
+          nullable: true
+          example: 2
+        mengajar_list:
+          type: array
+          items:
+            $ref: '#/components/schemas/GuruMengajar'
+      required:
+        - id
+        - nama
+
+    GuruCreate:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "G001"
+        nama:
+          type: string
+          example: "Budi Santoso, S.Pd."
+        username:
+          type: string
+          example: "guru_math"
+        password:
+          type: string
+          example: "password123"
+      required:
+        - id
+        - nama
+        - username
+        - password
+
+    GuruUpdate:
+      type: object
+      properties:
+        nama:
+          type: string
+          example: "Budi Santoso, M.Pd."
+
+    # ── Guru Mengajar (Junction) ──
+    GuruMengajar:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        guru_id:
+          type: string
+          example: "G001"
+        guru:
+          type: object
+          properties:
+            id:
+              type: string
+              example: "G001"
+            nama:
+              type: string
+              example: "Budi Santoso, S.Pd."
+        kelas_id:
+          type: integer
+          example: 1
+        kelas:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            nama:
+              type: string
+              example: "X-A"
+        mata_pelajaran_id:
+          type: integer
+          example: 1
+        mata_pelajaran:
+          type: object
+          properties:
+            id:
+              type: integer
+              example: 1
+            nama:
+              type: string
+              example: "Matematika"
+      required:
+        - id
+        - guru_id
+        - kelas_id
+        - mata_pelajaran_id
+
+    GuruMengajarCreate:
+      type: object
+      properties:
+        guru_id:
+          type: string
+          example: "G001"
+        kelas_id:
+          type: integer
+          example: 1
+        mata_pelajaran_id:
+          type: integer
+          example: 1
+      required:
+        - guru_id
+        - kelas_id
+        - mata_pelajaran_id
+
+    # ── Nilai ──
+    Nilai:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        nis:
+          type: string
+          example: "20240001"
+        siswa:
+          type: object
+          properties:
+            nis:
+              type: string
+              example: "20240001"
+            nama:
+              type: string
+              example: "Andi Pratama"
+        guru_mengajar_id:
+          type: integer
+          example: 1
+        guru_mengajar:
+          $ref: '#/components/schemas/GuruMengajar'
+        tugas:
+          type: number
+          minimum: 0
+          maximum: 100
+          example: 80.0
+        uts:
+          type: number
+          minimum: 0
+          maximum: 100
+          example: 75.0
+        uas:
+          type: number
+          minimum: 0
+          maximum: 100
+          example: 85.0
+        nilai_akhir:
+          type: number
+          description: "Hasil: (30% × Tugas) + (30% × UTS) + (40% × UAS)"
+          example: 80.5
+        status:
+          type: string
+          enum: [Lulus, Tidak Lulus]
+          description: "Lulus jika nilai_akhir ≥ 70"
+          example: "Lulus"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - nis
+        - guru_mengajar_id
+        - tugas
+        - uts
+        - uas
+        - nilai_akhir
+        - status
+
+    NilaiCreate:
+      type: object
+      properties:
+        nis:
+          type: string
+          example: "20240001"
+        guru_mengajar_id:
+          type: integer
+          description: ID dari GuruMengajar (guru + kelas + mapel)
+          example: 1
+        tugas:
+          type: number
+          minimum: 0
+          maximum: 100
+          example: 80.0
+        uts:
+          type: number
+          minimum: 0
+          maximum: 100
+          example: 75.0
+        uas:
+          type: number
+          minimum: 0
+          maximum: 100
+          example: 85.0
+      required:
+        - nis
+        - guru_mengajar_id
+        - tugas
+        - uts
+        - uas
+
+    NilaiUpdate:
+      type: object
+      properties:
+        tugas:
+          type: number
+          minimum: 0
+          maximum: 100
+          example: 85.0
+        uts:
+          type: number
+          minimum: 0
+          maximum: 100
+          example: 78.0
+        uas:
+          type: number
+          minimum: 0
+          maximum: 100
+          example: 90.0
+
+    # ── Laporan ──
+    LaporanSiswaResponse:
+      type: object
+      properties:
+        siswa:
+          $ref: '#/components/schemas/Siswa'
+        nilai_list:
+          type: array
+          items:
+            $ref: '#/components/schemas/Nilai'
+        ringkasan:
+          type: object
+          properties:
+            rata_rata:
+              type: number
+              example: 81.67
+            jumlah_mapel:
+              type: integer
+              example: 5
+            lulus:
+              type: integer
+              example: 5
+            tidak_lulus:
+              type: integer
+              example: 0
+            status_akhir:
+              type: string
+              enum: [Lulus, Tidak Lulus]
+              description: "Lulus jika semua mapel lulus"
+              example: "Lulus"
+
+    LaporanKelasResponse:
+      type: object
+      properties:
+        kelas_id:
+          type: integer
+          example: 1
+        kelas_nama:
+          type: string
+          example: "X-A"
+        jumlah_siswa:
+          type: integer
+          example: 30
+        rata_rata_kelas:
+          type: number
+          example: 78.45
+        persentase_lulus:
+          type: number
+          example: 86.67
+        detail:
+          type: array
+          items:
+            type: object
+            properties:
+              nis:
+                type: string
+              nama:
+                type: string
+              rata_rata:
+                type: number
+              jumlah_lulus:
+                type: integer
+              jumlah_tidak_lulus:
+                type: integer
+              status:
+                type: string
+
+security:
+  - BearerAuth: []
+
+paths:
+  # ═══════════════════════════════════════════
+  # AUTH
+  # ═══════════════════════════════════════════
+  /auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login user
+      description: Authenticate user dan return JWT token.
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login berhasil
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Username atau password salah
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/change-password:
+    put:
+      tags:
+        - Auth
+      summary: Ganti password sendiri
+      description: >
+        User mengganti password akunnya sendiri.
+        Harus menyertakan password lama yang valid.
+      operationId: changePassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: Password berhasil diubah
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '400':
+          description: Password lama salah atau validasi gagal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Tidak terautentikasi
+
+  /auth/reset-password/{user_id}:
+    put:
+      tags:
+        - Auth
+      summary: Admin reset password user
+      description: >
+        Hanya role Admin.
+        Mereset password user lain tanpa perlu password lama.
+      operationId: resetPassword
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 4
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Password berhasil direset
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '400':
+          description: Validasi gagal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden (bukan Admin)
+        '404':
+          description: User tidak ditemukan
+
+  # ═══════════════════════════════════════════
+  # KELAS
+  # ═══════════════════════════════════════════
+  /kelas:
+    get:
+      tags:
+        - Kelas
+      summary: List semua kelas
+      operationId: listKelas
+      responses:
+        '200':
+          description: Daftar kelas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Kelas'
+
+    post:
+      tags:
+        - Kelas
+      summary: Tambah kelas baru
+      description: Hanya role Admin.
+      operationId: createKelas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KelasCreate'
+      responses:
+        '201':
+          description: Kelas berhasil ditambah
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Kelas'
+        '400':
+          description: Validasi gagal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden (bukan Admin)
+
+  /kelas/{id}:
+    get:
+      tags:
+        - Kelas
+      summary: Detail kelas by ID
+      operationId: getKelasById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        '200':
+          description: Detail kelas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Kelas'
+        '404':
+          description: Kelas tidak ditemukan
+
+    put:
+      tags:
+        - Kelas
+      summary: Update data kelas
+      description: Hanya role Admin.
+      operationId: updateKelas
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KelasUpdate'
+      responses:
+        '200':
+          description: Kelas berhasil diupdate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Kelas'
+        '403':
+          description: Forbidden
+        '404':
+          description: Kelas tidak ditemukan
+
+    delete:
+      tags:
+        - Kelas
+      summary: Hapus kelas
+      description: Hanya role Admin.
+      operationId: deleteKelas
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Kelas berhasil dihapus
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '403':
+          description: Forbidden
+        '404':
+          description: Kelas tidak ditemukan
+
+  # ═══════════════════════════════════════════
+  # MATA PELAJARAN
+  # ═══════════════════════════════════════════
+  /mata-pelajaran:
+    get:
+      tags:
+        - Mata Pelajaran
+      summary: List semua mata pelajaran
+      operationId: listMataPelajaran
+      responses:
+        '200':
+          description: Daftar mata pelajaran
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MataPelajaran'
+
+    post:
+      tags:
+        - Mata Pelajaran
+      summary: Tambah mata pelajaran baru
+      description: Hanya role Admin.
+      operationId: createMataPelajaran
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MataPelajaranCreate'
+      responses:
+        '201':
+          description: Mata pelajaran berhasil ditambah
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MataPelajaran'
+        '400':
+          description: Validasi gagal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+
+  /mata-pelajaran/{id}:
+    get:
+      tags:
+        - Mata Pelajaran
+      summary: Detail mata pelajaran by ID
+      operationId: getMataPelajaranById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        '200':
+          description: Detail mata pelajaran
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MataPelajaran'
+        '404':
+          description: Mata pelajaran tidak ditemukan
+
+    put:
+      tags:
+        - Mata Pelajaran
+      summary: Update mata pelajaran
+      description: Hanya role Admin.
+      operationId: updateMataPelajaran
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MataPelajaranUpdate'
+      responses:
+        '200':
+          description: Mata pelajaran berhasil diupdate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MataPelajaran'
+        '403':
+          description: Forbidden
+        '404':
+          description: Mata pelajaran tidak ditemukan
+
+    delete:
+      tags:
+        - Mata Pelajaran
+      summary: Hapus mata pelajaran
+      description: Hanya role Admin.
+      operationId: deleteMataPelajaran
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Mata pelajaran berhasil dihapus
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '403':
+          description: Forbidden
+        '404':
+          description: Mata pelajaran tidak ditemukan
+
+  # ═══════════════════════════════════════════
+  # SISWA
+  # ═══════════════════════════════════════════
+  /siswa:
+    get:
+      tags:
+        - Siswa
+      summary: List semua siswa
+      operationId: listSiswa
+      parameters:
+        - name: kelas_id
+          in: query
+          schema:
+            type: integer
+          description: Filter berdasarkan kelas (opsional)
+          example: 1
+      responses:
+        '200':
+          description: Daftar siswa
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Siswa'
+
+    post:
+      tags:
+        - Siswa
+      summary: Tambah siswa baru
+      description: >
+        Hanya role Admin.
+        Otomatis membuat user login untuk siswa (role=siswa).
+      operationId: createSiswa
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SiswaCreate'
+      responses:
+        '201':
+          description: Siswa berhasil ditambah
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Siswa'
+        '400':
+          description: Validasi gagal (NIS duplikat, dll)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden (bukan Admin)
+
+  /siswa/{nis}:
+    get:
+      tags:
+        - Siswa
+      summary: Detail siswa by NIS
+      operationId: getSiswaByNis
+      parameters:
+        - name: nis
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "20240001"
+      responses:
+        '200':
+          description: Detail siswa (termasuk nilai jika ada)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SiswaWithNilai'
+        '404':
+          description: Siswa tidak ditemukan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - Siswa
+      summary: Update data siswa
+      description: Hanya role Admin.
+      operationId: updateSiswa
+      parameters:
+        - name: nis
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SiswaUpdate'
+      responses:
+        '200':
+          description: Siswa berhasil diupdate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Siswa'
+        '403':
+          description: Forbidden
+        '404':
+          description: Siswa tidak ditemukan
+
+    delete:
+      tags:
+        - Siswa
+      summary: Hapus siswa
+      description: >
+        Hanya role Admin.
+        Juga menghapus user login terkait dan semua nilai siswa.
+      operationId: deleteSiswa
+      parameters:
+        - name: nis
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Siswa berhasil dihapus
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '403':
+          description: Forbidden
+        '404':
+          description: Siswa tidak ditemukan
+
+  # ═══════════════════════════════════════════
+  # GURU
+  # ═══════════════════════════════════════════
+  /guru:
+    get:
+      tags:
+        - Guru
+      summary: List semua guru
+      operationId: listGuru
+      responses:
+        '200':
+          description: Daftar guru (termasuk mengajar_list)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Guru'
+
+    post:
+      tags:
+        - Guru
+      summary: Tambah guru baru
+      description: >
+        Hanya role Admin.
+        Otomatis membuat user login untuk guru (role=guru).
+        Mata pelajaran diassign via endpoint GuruMengajar.
+      operationId: createGuru
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuruCreate'
+      responses:
+        '201':
+          description: Guru berhasil ditambah
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Guru'
+        '400':
+          description: Validasi gagal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+
+  /guru/{id}:
+    get:
+      tags:
+        - Guru
+      summary: Detail guru by ID
+      operationId: getGuruById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "G001"
+      responses:
+        '200':
+          description: Detail guru (termasuk mengajar_list)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Guru'
+        '404':
+          description: Guru tidak ditemukan
+
+    put:
+      tags:
+        - Guru
+      summary: Update data guru
+      description: Hanya role Admin.
+      operationId: updateGuru
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuruUpdate'
+      responses:
+        '200':
+          description: Guru berhasil diupdate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Guru'
+        '403':
+          description: Forbidden
+        '404':
+          description: Guru tidak ditemukan
+
+    delete:
+      tags:
+        - Guru
+      summary: Hapus guru
+      description: >
+        Hanya role Admin.
+        Juga menghapus user login terkait dan semua assignment mengajar.
+      operationId: deleteGuru
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Guru berhasil dihapus
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '403':
+          description: Forbidden
+        '404':
+          description: Guru tidak ditemukan
+
+  # ═══════════════════════════════════════════
+  # GURU MENGAJAR
+  # ═══════════════════════════════════════════
+  /guru-mengajar:
+    get:
+      tags:
+        - Guru Mengajar
+      summary: List semua assignment mengajar
+      description: Filterable by guru_id, kelas_id, mata_pelajaran_id.
+      operationId: listGuruMengajar
+      parameters:
+        - name: guru_id
+          in: query
+          schema:
+            type: string
+          description: Filter by guru (opsional)
+          example: "G001"
+        - name: kelas_id
+          in: query
+          schema:
+            type: integer
+          description: Filter by kelas (opsional)
+          example: 1
+        - name: mata_pelajaran_id
+          in: query
+          schema:
+            type: integer
+          description: Filter by mata pelajaran (opsional)
+          example: 1
+      responses:
+        '200':
+          description: Daftar assignment mengajar
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GuruMengajar'
+
+    post:
+      tags:
+        - Guru Mengajar
+      summary: Assign guru ke kelas + mata pelajaran
+      description: >
+        Hanya role Admin.
+        Satu guru bisa mengajar banyak mapel di banyak kelas.
+        Kombinasi (guru_id, kelas_id, mata_pelajaran_id) harus unik.
+      operationId: createGuruMengajar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuruMengajarCreate'
+      responses:
+        '201':
+          description: Assignment berhasil dibuat
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuruMengajar'
+        '400':
+          description: Validasi gagal (duplikat assignment)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+
+  /guru-mengajar/{id}:
+    get:
+      tags:
+        - Guru Mengajar
+      summary: Detail assignment by ID
+      operationId: getGuruMengajarById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        '200':
+          description: Detail assignment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuruMengajar'
+        '404':
+          description: Assignment tidak ditemukan
+
+    delete:
+      tags:
+        - Guru Mengajar
+      summary: Hapus assignment mengajar
+      description: Hanya role Admin.
+      operationId: deleteGuruMengajar
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Assignment berhasil dihapus
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '403':
+          description: Forbidden
+        '404':
+          description: Assignment tidak ditemukan
+
+  # ═══════════════════════════════════════════
+  # NILAI
+  # ═══════════════════════════════════════════
+  /nilai:
+    get:
+      tags:
+        - Nilai
+      summary: List semua nilai
+      description: >
+        Admin & Guru: lihat semua nilai.
+        Siswa: hanya lihat nilai milik sendiri.
+      operationId: listNilai
+      parameters:
+        - name: kelas_id
+          in: query
+          schema:
+            type: integer
+          description: Filter berdasarkan kelas (opsional, via guru_mengajar.kelas_id)
+          example: 1
+        - name: mata_pelajaran_id
+          in: query
+          schema:
+            type: integer
+          description: Filter berdasarkan mata pelajaran (opsional, via guru_mengajar.mata_pelajaran_id)
+          example: 1
+      responses:
+        '200':
+          description: Daftar nilai (dengan expanded data guru, mapel, kelas)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Nilai'
+
+    post:
+      tags:
+        - Nilai
+      summary: Input nilai baru
+      description: >
+        Hanya role Guru & Admin.
+        Nilai Akhir dan Status dihitung OTOMATIS oleh server.
+        Validasi: tugas, uts, uas harus dalam rentang 0-100.
+      operationId: createNilai
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NilaiCreate'
+      responses:
+        '201':
+          description: Nilai berhasil diinput (termasuk nilai_akhir & status)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Nilai'
+        '400':
+          description: Validasi gagal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+
+  /nilai/{id}:
+    get:
+      tags:
+        - Nilai
+      summary: Detail nilai by ID
+      operationId: getNilaiById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        '200':
+          description: Detail nilai
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Nilai'
+        '404':
+          description: Nilai tidak ditemukan
+
+    put:
+      tags:
+        - Nilai
+      summary: Update nilai
+      description: >
+        Hanya role Guru & Admin.
+        Nilai Akhir dan Status dihitung ulang OTOMATIS oleh server.
+      operationId: updateNilai
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NilaiUpdate'
+      responses:
+        '200':
+          description: Nilai berhasil diupdate (termasuk nilai_akhir & status baru)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Nilai'
+        '400':
+          description: Validasi gagal
+        '403':
+          description: Forbidden
+        '404':
+          description: Nilai tidak ditemukan
+
+    delete:
+      tags:
+        - Nilai
+      summary: Hapus nilai
+      description: Hanya role Admin.
+      operationId: deleteNilai
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Nilai berhasil dihapus
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '403':
+          description: Forbidden
+        '404':
+          description: Nilai tidak ditemukan
+
+  /nilai/siswa/{nis}:
+    get:
+      tags:
+        - Nilai
+      summary: List nilai siswa tertentu
+      description: >
+        Admin & Guru: lihat nilai siswa manapun.
+        Siswa: hanya lihat nilai sendiri (nis = nis miliknya).
+      operationId: listNilaiBySiswa
+      parameters:
+        - name: nis
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "20240001"
+      responses:
+        '200':
+          description: Daftar nilai siswa
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Nilai'
+        '403':
+          description: Siswa mencoba akses nilai siswa lain
+        '404':
+          description: Siswa tidak ditemukan
+
+  # ═══════════════════════════════════════════
+  # LAPORAN
+  # ═══════════════════════════════════════════
+  /laporan:
+    get:
+      tags:
+        - Laporan
+      summary: Laporan per kelas
+      description: >
+        Admin & Guru.
+        Jika parameter kelas_id tidak diberikan, return semua kelas.
+      operationId: getLaporanKelas
+      parameters:
+        - name: kelas_id
+          in: query
+          schema:
+            type: integer
+          description: Filter kelas (opsional)
+          example: 1
+      responses:
+        '200':
+          description: Laporan kelas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LaporanKelasResponse'
+        '403':
+          description: Forbidden (Siswa tidak boleh akses)
+
+  /laporan/siswa/{nis}:
+    get:
+      tags:
+        - Laporan
+      summary: Laporan individu siswa
+      description: >
+        Admin & Guru: lihat laporan siswa manapun.
+        Siswa: hanya lihat laporan sendiri.
+      operationId: getLaporanSiswa
+      parameters:
+        - name: nis
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "20240001"
+      responses:
+        '200':
+          description: Laporan individu siswa
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LaporanSiswaResponse'
+        '403':
+          description: Forbidden
+        '404':
+          description: Siswa tidak ditemukan
