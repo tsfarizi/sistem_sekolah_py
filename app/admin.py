@@ -1,4 +1,4 @@
-from sqladmin import Admin, ModelView
+from sqladmin import ModelView
 from sqladmin.authentication import AuthenticationBackend
 from starlette.requests import Request
 from wtforms import StringField, SelectField

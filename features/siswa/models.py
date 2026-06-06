@@ -14,14 +14,3 @@ class Siswa(Base):
     user: Mapped["User"] = relationship(back_populates="siswa")
     kelas: Mapped["Kelas"] = relationship(back_populates="siswa_list")
     nilai_list: Mapped[list["Nilai"]] = relationship(back_populates="siswa", cascade="all, delete-orphan")
-
-    def to_dict(self) -> dict:
-        return {
-            "nis": self.nis,
-            "nama": self.nama,
-            "kelas_id": self.kelas_id,
-            "user_id": self.user_id,
-        }
-
-    def get_nilai_akhir(self) -> list:
-        return self.nilai_list

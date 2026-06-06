@@ -1,12 +1,7 @@
 from typing import Optional
 from pydantic import BaseModel, ConfigDict
+from core.schemas import KelasRef
 from features.nilai.schemas import NilaiResponse
-
-
-class KelasRef(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-    id: int
-    nama: str
 
 
 class SiswaCreate(BaseModel):
