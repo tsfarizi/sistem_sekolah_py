@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 from sqlalchemy import String, Integer, Float, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from core.database import Base
@@ -9,8 +8,8 @@ from features.nilai.utils import hitung_nilai_akhir, tentukan_status
 class Nilai(Base):
     __tablename__ = "nilai"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    nis: Mapped[str] = mapped_column(String(20), ForeignKey("siswa.nis"), nullable=False)
-    guru_mengajar_id: Mapped[int] = mapped_column(Integer, ForeignKey("guru_mengajar.id"), nullable=False)
+    nis: Mapped[str] = mapped_column(String(20), ForeignKey("siswa.nis", ondelete="CASCADE"), nullable=False)
+    guru_mengajar_id: Mapped[int] = mapped_column(Integer, ForeignKey("guru_mengajar.id", ondelete="CASCADE"), nullable=False)
     tugas: Mapped[float] = mapped_column(Float, nullable=False)
     uts: Mapped[float] = mapped_column(Float, nullable=False)
     uas: Mapped[float] = mapped_column(Float, nullable=False)

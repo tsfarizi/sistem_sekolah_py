@@ -20,10 +20,6 @@ def get_all(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if current_user.role not in ["admin", "guru"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
-        )
     return list_siswa(db, kelas_id=kelas_id)
 
 

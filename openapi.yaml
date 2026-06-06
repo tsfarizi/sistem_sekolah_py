@@ -285,6 +285,7 @@ components:
       properties:
         nis:
           type: string
+          description: Nomor Induk Siswa (auto-generated jika tidak diisi)
           example: "20240001"
         nama:
           type: string
@@ -302,7 +303,6 @@ components:
           description: Password untuk login siswa
           example: "password123"
       required:
-        - nis
         - nama
         - kelas_id
         - username
@@ -356,6 +356,7 @@ components:
       properties:
         id:
           type: string
+          description: "ID Guru (auto-generated jika tidak diisi, format: G001)"
           example: "G001"
         nama:
           type: string
@@ -367,7 +368,6 @@ components:
           type: string
           example: "password123"
       required:
-        - id
         - nama
         - username
         - password

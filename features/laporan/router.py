@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from core.dependencies import get_db, get_current_user
 from features.auth.models import User
@@ -14,10 +14,6 @@ def get_laporan_kelas(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if current_user.role == "siswa":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
-        )
     return laporan_by_kelas(db, kelas_id=kelas_id)
 
 
@@ -27,11 +23,4 @@ def get_laporan_siswa(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if current_user.role == "siswa":
-        from features.siswa.models import Siswa
-        current_siswa = db.query(Siswa).filter(Siswa.user_id == current_user.id).first()
-        if not current_siswa or current_siswa.nis != nis:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
-            )
     return laporan_by_siswa(db, nis)
