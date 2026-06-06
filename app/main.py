@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqladmin import Admin
 from app.config import JWT_SECRET
-from core.database import engine, Base, SessionLocal
+from core.database import engine, SessionLocal, init_db
 from core.security import hash_password
 from features.auth.models import User
 
@@ -21,7 +21,7 @@ from app.admin import AdminAuth, UserAdmin, NilaiAdmin, MataPelajaranAdmin, Kela
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    Base.metadata.create_all(bind=engine)
+    init_db()
     db = SessionLocal()
     try:
         if db.query(User).count() == 0:
