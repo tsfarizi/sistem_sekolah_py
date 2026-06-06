@@ -42,7 +42,7 @@ def detail_nilai(db: Session, nilai_id: int) -> Nilai:
     return nilai
 
 
-def create_new_nilai(db: Session, data: NilaiCreate) -> Nilai:
+def create_new_nilai(db: Session, data: NilaiCreate, current_user: User) -> Nilai:
     if not validasi_nilai(data.tugas):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Nilai tugas harus 0-100"
@@ -60,7 +60,14 @@ def create_new_nilai(db: Session, data: NilaiCreate) -> Nilai:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Siswa tidak ditemukan"
         )
-    gm = db.query(GuruMengajar).filter(GuruMengajar.id == data.guru_mengajar_id).first()
+    gm_query = db.query(GuruMengajar).filter(GuruMengajar.id == data.guru_mengajar_id)
+    if current_user.role == "guru":
+        if not current_user.guru:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Akun guru tidak valid"
+            )
+        gm_query = gm_query.filter(GuruMengajar.guru_id == current_user.guru.id)
+    gm = gm_query.first()
     if not gm:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Data guru mengajar tidak ditemukan"
@@ -78,12 +85,17 @@ def create_new_nilai(db: Session, data: NilaiCreate) -> Nilai:
     return repo_create_nilai(db, nilai)
 
 
-def update_existing_nilai(db: Session, nilai_id: int, data: NilaiUpdate) -> Nilai:
+def update_existing_nilai(db: Session, nilai_id: int, data: NilaiUpdate, current_user: User) -> Nilai:
     nilai = get_nilai_by_id(db, nilai_id)
     if not nilai:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Nilai tidak ditemukan"
         )
+    if current_user.role == "guru":
+        if not current_user.guru or nilai.guru_mengajar.guru_id != current_user.guru.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Anda tidak berhak mengubah nilai ini"
+            )
     if data.tugas is not None:
         if not validasi_nilai(data.tugas):
             raise HTTPException(

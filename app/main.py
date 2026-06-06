@@ -7,7 +7,7 @@ from core.database import engine, Base, SessionLocal
 from core.security import hash_password
 from features.auth.models import User
 
-from features.auth.router import router as auth_router
+from features.auth.router import router as auth_router, user_router
 from features.siswa.router import router as siswa_router
 from features.guru.router import router as guru_router
 from features.nilai.router import router as nilai_router
@@ -16,7 +16,7 @@ from features.mata_pelajaran.router import router as mapel_router
 from features.kelas.router import router as kelas_router
 from features.guru_mengajar.router import router as guru_mengajar_router
 
-from app.admin import AdminAuth, UserAdmin, SiswaAdmin, GuruAdmin, NilaiAdmin, MataPelajaranAdmin, KelasAdmin, GuruMengajarAdmin
+from app.admin import AdminAuth, UserAdmin, NilaiAdmin, MataPelajaranAdmin, KelasAdmin, GuruMengajarAdmin
 
 
 @asynccontextmanager
@@ -53,6 +53,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
+app.include_router(user_router)
 app.include_router(siswa_router)
 app.include_router(guru_router)
 app.include_router(nilai_router)
@@ -65,8 +66,6 @@ auth_backend = AdminAuth(secret_key=JWT_SECRET)
 admin = Admin(app, engine, authentication_backend=auth_backend)
 
 admin.add_view(UserAdmin)
-admin.add_view(SiswaAdmin)
-admin.add_view(GuruAdmin)
 admin.add_view(NilaiAdmin)
 admin.add_view(MataPelajaranAdmin)
 admin.add_view(KelasAdmin)

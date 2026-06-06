@@ -10,7 +10,7 @@ class KelasRef(BaseModel):
 
 
 class SiswaCreate(BaseModel):
-    nis: str
+    nis: Optional[str] = None
     nama: str
     kelas_id: int
     username: str

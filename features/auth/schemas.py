@@ -1,3 +1,4 @@
+from typing import Optional
 from pydantic import BaseModel, ConfigDict, field_validator
 
 
@@ -40,3 +41,45 @@ class UserResponse(BaseModel):
 class LoginResponse(BaseModel):
     token: str
     user: UserResponse
+
+
+class UserCreate(BaseModel):
+    username: str
+    password: str
+    role: str
+    nama: str
+
+    @field_validator("password")
+    @classmethod
+    def min_length(cls, v: str) -> str:
+        if len(v) < 6:
+            raise ValueError("Password minimal 6 karakter")
+        return v
+
+    @field_validator("role")
+    @classmethod
+    def valid_role(cls, v: str) -> str:
+        if v not in ("admin", "guru", "siswa"):
+            raise ValueError("Role harus admin, guru, atau siswa")
+        return v
+
+
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    password: Optional[str] = None
+    role: Optional[str] = None
+    nama: Optional[str] = None
+
+    @field_validator("password")
+    @classmethod
+    def min_length(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and len(v) < 6:
+            raise ValueError("Password minimal 6 karakter")
+        return v
+
+    @field_validator("role")
+    @classmethod
+    def valid_role(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v not in ("admin", "guru", "siswa"):
+            raise ValueError("Role harus admin, guru, atau siswa")
+        return v

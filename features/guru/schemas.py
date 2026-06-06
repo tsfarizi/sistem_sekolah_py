@@ -3,7 +3,7 @@ from pydantic import BaseModel, ConfigDict
 
 
 class GuruCreate(BaseModel):
-    id: str
+    id: Optional[str] = None
     nama: str
     username: str
     password: str

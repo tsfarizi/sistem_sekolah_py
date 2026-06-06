@@ -57,7 +57,7 @@ def create(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
-    return create_new_nilai(db, data)
+    return create_new_nilai(db, data, current_user)
 
 
 @router.put("/{id}", response_model=NilaiResponse)
@@ -71,7 +71,7 @@ def update(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
-    return update_existing_nilai(db, id, data)
+    return update_existing_nilai(db, id, data, current_user)
 
 
 @router.delete("/{id}")

@@ -18,6 +18,8 @@ servers:
 tags:
   - name: Auth
     description: Authentication endpoints
+  - name: Users
+    description: User management (Admin only)
   - name: Kelas
     description: Class management (Admin CRUD)
   - name: Mata Pelajaran
@@ -126,6 +128,65 @@ components:
       required:
         - new_password
 
+    # ── User ──
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: "admin"
+        role:
+          type: string
+          enum: [admin, guru, siswa]
+          example: "admin"
+        nama:
+          type: string
+          example: "Administrator"
+
+    UserCreate:
+      type: object
+      properties:
+        username:
+          type: string
+          example: "guru_baru"
+        password:
+          type: string
+          minLength: 6
+          example: "password123"
+        role:
+          type: string
+          enum: [admin, guru, siswa]
+          example: "guru"
+        nama:
+          type: string
+          example: "Nama Guru Baru"
+      required:
+        - username
+        - password
+        - role
+        - nama
+
+    UserUpdate:
+      type: object
+      properties:
+        username:
+          type: string
+          example: "guru_baru_edit"
+        password:
+          type: string
+          minLength: 6
+          example: "newpassword"
+        role:
+          type: string
+          enum: [admin, guru, siswa]
+          example: "guru"
+        nama:
+          type: string
+          example: "Nama Guru Edit"
+
     # ── Kelas ──
     Kelas:
       type: object
@@ -136,21 +197,6 @@ components:
         nama:
           type: string
           example: "X-A"
-        wali_kelas_id:
-          type: string
-          nullable: true
-          description: ID Guru yang menjadi wali kelas (opsional)
-          example: "G001"
-        wali_kelas:
-          type: object
-          nullable: true
-          properties:
-            id:
-              type: string
-              example: "G001"
-            nama:
-              type: string
-              example: "Budi Santoso, S.Pd."
       required:
         - id
         - nama
@@ -161,10 +207,6 @@ components:
         nama:
           type: string
           example: "X-A"
-        wali_kelas_id:
-          type: string
-          description: ID Guru wali kelas (opsional)
-          example: "G001"
       required:
         - nama
 
@@ -174,10 +216,6 @@ components:
         nama:
           type: string
           example: "X-B"
-        wali_kelas_id:
-          type: string
-          nullable: true
-          example: "G002"
 
     # ── Mata Pelajaran ──
     MataPelajaran:
@@ -692,6 +730,134 @@ paths:
                 $ref: '#/components/schemas/Error'
         '403':
           description: Forbidden (bukan Admin)
+        '404':
+          description: User tidak ditemukan
+
+  # ═══════════════════════════════════════════
+  # USERS
+  # ═══════════════════════════════════════════
+  /users:
+    get:
+      tags:
+        - Users
+      summary: List semua user
+      description: Hanya role Admin.
+      operationId: listUsers
+      responses:
+        '200':
+          description: Daftar user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserResponse'
+        '403':
+          description: Forbidden
+
+    post:
+      tags:
+        - Users
+      summary: Tambah user baru
+      description: Hanya role Admin.
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '201':
+          description: User berhasil ditambah
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Validasi gagal
+        '403':
+          description: Forbidden
+
+  /users/{user_id}:
+    get:
+      tags:
+        - Users
+      summary: Detail user by ID
+      description: Hanya role Admin.
+      operationId: getUserById
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          example: 1
+      responses:
+        '200':
+          description: Detail user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '403':
+          description: Forbidden
+        '404':
+          description: User tidak ditemukan
+
+    put:
+      tags:
+        - Users
+      summary: Update user
+      description: Hanya role Admin.
+      operationId: updateUser
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: User berhasil diupdate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Validasi gagal
+        '403':
+          description: Forbidden
+        '404':
+          description: User tidak ditemukan
+
+    delete:
+      tags:
+        - Users
+      summary: Hapus user
+      description: Hanya role Admin.
+      operationId: deleteUser
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: User berhasil dihapus
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '403':
+          description: Forbidden
         '404':
           description: User tidak ditemukan
 

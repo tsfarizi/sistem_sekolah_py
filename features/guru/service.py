@@ -13,6 +13,17 @@ from features.auth.models import User
 from core.security import hash_password
 
 
+def _generate_guru_id(db: Session) -> str:
+    last = db.query(Guru).order_by(Guru.id.desc()).first()
+    if not last:
+        return "G001"
+    try:
+        num = int(last.id[1:]) + 1
+        return f"G{num:03d}"
+    except (ValueError, IndexError):
+        return "G001"
+
+
 def list_guru(db: Session) -> list[Guru]:
     return get_all_guru(db)
 
@@ -27,7 +38,8 @@ def detail_guru(db: Session, guru_id: str) -> Guru:
 
 
 def create_new_guru(db: Session, data: GuruCreate) -> Guru:
-    existing = get_guru_by_id(db, data.id)
+    guru_id = data.id if data.id else _generate_guru_id(db)
+    existing = get_guru_by_id(db, guru_id)
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="ID Guru sudah digunakan"
@@ -46,7 +58,7 @@ def create_new_guru(db: Session, data: GuruCreate) -> Guru:
     db.add(user)
     db.flush()
     guru = Guru(
-        id=data.id,
+        id=guru_id,
         nama=data.nama,
         user_id=user.id,
     )

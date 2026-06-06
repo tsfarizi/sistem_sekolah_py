@@ -1,7 +1,11 @@
 from sqladmin import Admin, ModelView
 from sqladmin.authentication import AuthenticationBackend
 from starlette.requests import Request
-from wtforms import PasswordField
+from wtforms import StringField, SelectField
+from datetime import datetime
+
+ROLE_CHOICES = [("admin", "Admin"), ("guru", "Guru"), ("siswa", "Siswa")]
+
 from core.database import SessionLocal
 from core.security import hash_password, verify_password
 from features.auth.models import User
@@ -51,8 +55,16 @@ class UserAdmin(ModelView, model=User):
     column_searchable_list = [User.username, User.nama, User.role]
     column_sortable_list = [User.id, User.username, User.role, User.nama, User.created_at]
     form_excluded_columns = [User.password_hash, User.siswa, User.guru]
+    form_overrides = {
+        "role": SelectField,
+    }
+    form_args = {
+        "role": {
+            "choices": ROLE_CHOICES,
+        },
+    }
     form_extra_fields = {
-        "password": PasswordField("Password"),
+        "password": StringField("New Password (kosongkan jika tidak ingin mengubah)"),
     }
     can_create = True
     can_edit = True
@@ -75,14 +87,59 @@ class SiswaAdmin(ModelView, model=Siswa):
     name = "Siswa"
     name_plural = "Siswa"
 
+    async def on_model_change(self, data: dict, model, is_created: bool, request: Request):
+        if is_created:
+            form = await request.form()
+            nis = form.get("nis")
+            if not nis or not str(nis).strip():
+                db = SessionLocal()
+                try:
+                    year = str(datetime.utcnow().year)
+                    last = db.query(Siswa).filter(Siswa.nis.like(f"{year}%")).order_by(Siswa.nis.desc()).first()
+                    if not last:
+                        model.nis = f"{year}0001"
+                    else:
+                        try:
+                            num = int(last.nis[4:]) + 1
+                            model.nis = f"{year}{num:04d}"
+                        except (ValueError, IndexError):
+                            model.nis = f"{year}0001"
+                finally:
+                    db.close()
+                data.pop("nis", None)
+        return await super().on_model_change(data, model, is_created, request)
+
 
 class GuruAdmin(ModelView, model=Guru):
     column_list = [Guru.id, Guru.nama, Guru.user_id]
     column_searchable_list = [Guru.id, Guru.nama]
     column_sortable_list = [Guru.id, Guru.nama]
-    form_excluded_columns = [Guru.mengajar_list, Guru.wali_kelas_list, Guru.user]
+    form_excluded_columns = [Guru.mengajar_list, Guru.user]
     name = "Guru"
     name_plural = "Guru"
+
+    async def on_model_change(self, data: dict, model, is_created: bool, request: Request):
+        if is_created:
+            form = await request.form()
+            guru_id = form.get("id")
+            if not guru_id or not str(guru_id).strip():
+                db = SessionLocal()
+                try:
+                    last = db.query(Guru).order_by(Guru.id.desc()).first()
+                    if not last:
+                        model.id = "G001"
+                    else:
+                        try:
+                            num = int(last.id[1:]) + 1
+                            model.id = f"G{num:03d}"
+                        except (ValueError, IndexError):
+                            model.id = "G001"
+                finally:
+                    db.close()
+                data.pop("id", None)
+            else:
+                model.id = str(guru_id)
+        return await super().on_model_change(data, model, is_created, request)
 
 
 class NilaiAdmin(ModelView, model=Nilai):
@@ -108,10 +165,10 @@ class MataPelajaranAdmin(ModelView, model=MataPelajaran):
 
 
 class KelasAdmin(ModelView, model=Kelas):
-    column_list = [Kelas.id, Kelas.nama, Kelas.wali_kelas_id]
+    column_list = [Kelas.id, Kelas.nama]
     column_searchable_list = [Kelas.nama]
     column_sortable_list = [Kelas.id, Kelas.nama]
-    form_excluded_columns = [Kelas.wali_kelas, Kelas.siswa_list, Kelas.mengajar_list]
+    form_excluded_columns = [Kelas.siswa_list, Kelas.mengajar_list]
     name = "Kelas"
     name_plural = "Kelas"
 

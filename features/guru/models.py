@@ -12,7 +12,6 @@ class Guru(Base):
 
     user: Mapped["User"] = relationship(back_populates="guru")
     mengajar_list: Mapped[list["GuruMengajar"]] = relationship(back_populates="guru", cascade="all, delete-orphan")
-    wali_kelas_list: Mapped[list["Kelas"]] = relationship(back_populates="wali_kelas")
 
     def to_dict(self) -> dict:
         return {

@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from datetime import datetime
 from fastapi import HTTPException, status
 from features.siswa.models import Siswa
 from features.siswa.repository import (
@@ -12,6 +13,18 @@ from features.siswa.schemas import SiswaCreate, SiswaUpdate
 from features.auth.models import User
 from features.kelas.models import Kelas
 from core.security import hash_password
+
+
+def _generate_nis(db: Session) -> str:
+    year = str(datetime.utcnow().year)
+    last = db.query(Siswa).filter(Siswa.nis.like(f"{year}%")).order_by(Siswa.nis.desc()).first()
+    if not last:
+        return f"{year}0001"
+    try:
+        num = int(last.nis[4:]) + 1
+        return f"{year}{num:04d}"
+    except (ValueError, IndexError):
+        return f"{year}0001"
 
 
 def list_siswa(db: Session, kelas_id: int | None = None) -> list[Siswa]:
@@ -30,7 +43,8 @@ def detail_siswa(db: Session, nis: str) -> Siswa:
 
 
 def create_new_siswa(db: Session, data: SiswaCreate) -> Siswa:
-    existing = get_siswa_by_nis(db, data.nis)
+    nis = data.nis if data.nis else _generate_nis(db)
+    existing = get_siswa_by_nis(db, nis)
     if existing:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="NIS sudah digunakan"
@@ -54,7 +68,7 @@ def create_new_siswa(db: Session, data: SiswaCreate) -> Siswa:
     db.add(user)
     db.flush()
     siswa = Siswa(
-        nis=data.nis,
+        nis=nis,
         nama=data.nama,
         kelas_id=data.kelas_id,
         user_id=user.id,

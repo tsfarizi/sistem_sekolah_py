@@ -12,24 +12,26 @@ def tentukan_status(nilai_akhir: float) -> str:
 
 def generate_laporan_siswa(nilai_list: list[dict]) -> dict:
     if not nilai_list:
-        return {"rata_rata": 0, "jumlah_mapel": 0, "lulus": 0, "tidak_lulus": 0, "detail": []}
+        return {"rata_rata": 0, "jumlah_mapel": 0, "lulus": 0, "tidak_lulus": 0, "status_akhir": "Tidak Lulus", "detail": []}
 
     total = sum(n["nilai_akhir"] for n in nilai_list)
     jumlah = len(nilai_list)
     lulus = sum(1 for n in nilai_list if n["status"] == "Lulus")
+    tidak_lulus = jumlah - lulus
 
     return {
         "rata_rata": round(total / jumlah, 2),
         "jumlah_mapel": jumlah,
         "lulus": lulus,
-        "tidak_lulus": jumlah - lulus,
+        "tidak_lulus": tidak_lulus,
+        "status_akhir": "Lulus" if tidak_lulus == 0 else "Tidak Lulus",
         "detail": nilai_list
     }
 
 
-def generate_laporan_kelas(nilai_list: list[dict], kelas: str) -> dict:
+def generate_laporan_kelas(nilai_list: list[dict], kelas_id: int, kelas_nama: str) -> dict:
     if not nilai_list:
-        return {"kelas": kelas, "jumlah_siswa": 0, "rata_rata_kelas": 0, "persentase_lulus": 0, "detail": []}
+        return {"kelas_id": kelas_id, "kelas_nama": kelas_nama, "jumlah_siswa": 0, "rata_rata_kelas": 0, "persentase_lulus": 0, "detail": []}
 
     siswa_unik = set(n["nis"] for n in nilai_list)
     total = sum(n["nilai_akhir"] for n in nilai_list)
@@ -37,7 +39,8 @@ def generate_laporan_kelas(nilai_list: list[dict], kelas: str) -> dict:
     lulus = sum(1 for n in nilai_list if n["status"] == "Lulus")
 
     return {
-        "kelas": kelas,
+        "kelas_id": kelas_id,
+        "kelas_nama": kelas_nama,
         "jumlah_siswa": len(siswa_unik),
         "rata_rata_kelas": round(total / jumlah, 2),
         "persentase_lulus": round((lulus / jumlah) * 100, 2),
