@@ -8,5 +8,5 @@ class Kelas(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     nama: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
 
-    siswa_list: Mapped[list["Siswa"]] = relationship(back_populates="kelas")
-    mengajar_list: Mapped[list["GuruMengajar"]] = relationship(back_populates="kelas")
+    siswa_list: Mapped[list["Siswa"]] = relationship(back_populates="kelas", cascade="all, delete-orphan")
+    mengajar_list: Mapped[list["GuruMengajar"]] = relationship(back_populates="kelas", cascade="all, delete-orphan")

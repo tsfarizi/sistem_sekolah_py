@@ -8,7 +8,7 @@ class Siswa(Base):
     nis: Mapped[str] = mapped_column(String(20), primary_key=True)
     nama: Mapped[str] = mapped_column(String(100), nullable=False)
     kelas_id: Mapped[int] = mapped_column(Integer, ForeignKey("kelas.id", ondelete="CASCADE"), nullable=False)
-    user_id: Mapped["int | None"] = mapped_column(Integer, ForeignKey("users.id"), unique=True)
+    user_id: Mapped["int | None"] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True)
 
     user: Mapped["User"] = relationship(back_populates="siswa")
     kelas: Mapped["Kelas"] = relationship(back_populates="siswa_list")

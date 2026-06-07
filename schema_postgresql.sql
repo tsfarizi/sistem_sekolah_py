@@ -31,7 +31,7 @@ CREATE TABLE guru (
 	user_id INTEGER, 
 	PRIMARY KEY (id), 
 	UNIQUE (user_id), 
-	FOREIGN KEY(user_id) REFERENCES users (id)
+	FOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 CREATE TABLE siswa (
@@ -42,7 +42,7 @@ CREATE TABLE siswa (
 	PRIMARY KEY (nis), 
 	FOREIGN KEY(kelas_id) REFERENCES kelas (id) ON DELETE CASCADE, 
 	UNIQUE (user_id), 
-	FOREIGN KEY(user_id) REFERENCES users (id)
+	FOREIGN KEY(user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
 CREATE TABLE guru_mengajar (

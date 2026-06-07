@@ -13,5 +13,5 @@ class User(Base):
     nama: Mapped[str] = mapped_column(String(100), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    siswa: Mapped["Siswa | None"] = relationship(back_populates="user", uselist=False)
-    guru: Mapped["Guru | None"] = relationship(back_populates="user", uselist=False)
+    siswa: Mapped["Siswa | None"] = relationship(back_populates="user", uselist=False, cascade="all, delete-orphan")
+    guru: Mapped["Guru | None"] = relationship(back_populates="user", uselist=False, cascade="all, delete-orphan")
