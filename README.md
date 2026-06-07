@@ -65,7 +65,51 @@ Untuk PostgreSQL, pastikan database sudah dibuat:
 CREATE DATABASE sekolah_db;
 ```
 
-Skema tabel akan otomatis dibuat saat aplikasi pertama dijalankan melalui file `schema_postgresql.sql` atau `schema_sqlite.sql`. Jika file skema tidak ditemukan, SQLAlchemy akan membuat tabel otomatis dari definisi model.
+## Database Migration (Alembic)
+
+Proyek ini menggunakan **Alembic** untuk mengelola perubahan struktur database secara aman tanpa kehilangan data. Alembic melacak perubahan di model SQLAlchemy dan menghasilkan script migration.
+
+### Setup Awal (hanya sekali)
+
+Setelah clone, jalankan migration pertama untuk membuat semua tabel:
+
+```bash
+uv run alembic upgrade head
+```
+
+### Alur Kerja Sehari-hari
+
+Setiap kali ada perubahan struktur data (tambah kolom, tabel baru, ubah constraint, dll.), ikuti langkah berikut:
+
+```bash
+# 1. Generate script migration otomatis dari perubahan model
+uv run alembic revision --autogenerate -m "deskripsi perubahan"
+
+# 2. Review file migration yang dihasilkan di alembic/versions/
+#    Pastikan tidak ada operasi yang salah atau berbahaya
+
+# 3. Jalankan migration
+uv run alembic upgrade head
+```
+
+### Perintah Alembik yang Sering Digunakan
+
+| Perintah | Kegunaan |
+|----------|----------|
+| `alembic upgrade head` | Jalankan semua migration ke versi terbaru |
+| `alembic downgrade -1` | Kembalikan 1 migration ke belakang |
+| `alembic revision --autogenerate -m "..."` | Buat migration otomatis dari perubahan model |
+| `alembic current` | Lihat versi migration database saat ini |
+| `alembic history` | Lihat riwayat semua migration |
+| `alembic upgrade +2` | Maju 2 migration ke depan |
+| `alembic stamp head` | Tandai database sebagai versi terbaru (tanpa menjalankan migration) |
+
+### Catatan Penting
+
+- Migration autogenerate mendeteksi perubahan seperti: kolom baru/hapus, tipe data berubah, constraint baru, tabel baru
+- Beberapa perubahan (rename kolom, rename tabel) tidak bisa dideteksi otomatis — harus ditulis manual di script migration
+- Selalu review file migration sebelum dijalankan di production
+- Untuk development, jika database masih kosong bisa langsung hapus DB dan restart — `init_db()` akan membuat ulang tabel
 
 ## Memulai Menggunakan
 
