@@ -1,3 +1,6 @@
+from features.nilai.models import Nilai
+
+
 def validasi_nilai(nilai: float) -> bool:
     return 0.0 <= nilai <= 100.0
 
@@ -10,9 +13,24 @@ def tentukan_status(nilai_akhir: float) -> str:
     return "Lulus" if nilai_akhir >= 70.0 else "Tidak Lulus"
 
 
+def nilai_to_dict(n: Nilai) -> dict:
+    return {
+        "id": n.id,
+        "nis": n.nis,
+        "guru_mengajar_id": n.guru_mengajar_id,
+        "tugas": n.tugas,
+        "uts": n.uts,
+        "uas": n.uas,
+        "nilai_akhir": n.nilai_akhir,
+        "status": n.status,
+        "created_at": n.created_at,
+        "updated_at": n.updated_at,
+    }
+
+
 def generate_laporan_siswa(nilai_list: list[dict]) -> dict:
     if not nilai_list:
-        return {"rata_rata": 0, "jumlah_mapel": 0, "lulus": 0, "tidak_lulus": 0, "status_akhir": "Tidak Lulus", "detail": []}
+        return {"rata_rata": 0, "jumlah_matapelajaran": 0, "lulus": 0, "tidak_lulus": 0, "status_akhir": "Tidak Lulus", "detail": []}
 
     total = sum(n["nilai_akhir"] for n in nilai_list)
     jumlah = len(nilai_list)
@@ -21,7 +39,7 @@ def generate_laporan_siswa(nilai_list: list[dict]) -> dict:
 
     return {
         "rata_rata": round(total / jumlah, 2),
-        "jumlah_mapel": jumlah,
+        "jumlah_matapelajaran": jumlah,
         "lulus": lulus,
         "tidak_lulus": tidak_lulus,
         "status_akhir": "Lulus" if tidak_lulus == 0 else "Tidak Lulus",

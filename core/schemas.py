@@ -14,7 +14,7 @@ class KelasRef(BaseModel):
     nama: str
 
 
-class MapelRef(BaseModel):
+class MataPelajaranRef(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     nama: str
@@ -34,4 +34,7 @@ class GuruMengajarRef(BaseModel):
     mata_pelajaran_id: int
     guru: Optional[GuruRef] = None
     kelas: Optional[KelasRef] = None
-    mata_pelajaran: Optional[MapelRef] = None
+    mata_pelajaran: Optional[MataPelajaranRef] = None
+
+class Message(BaseModel):
+    message: str

@@ -1,16 +1,25 @@
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
-from features.siswa.models import Siswa
-from features.nilai.models import Nilai
-from features.guru_mengajar.models import GuruMengajar
+from core.dependencies import CurrentUser
+from core.exceptions import NotFoundException, ForbiddenException
+from features.laporan.repository import (
+    get_nilai_joined,
+    get_nilai_by_nis,
+    get_siswa_by_nis,
+    get_kelas_ids_by_guru,
+    nilai_list_to_dicts,
+)
 from features.nilai.utils import generate_laporan_siswa, generate_laporan_kelas
 
 
-def laporan_by_kelas(db: Session, kelas_id: int | None = None) -> list[dict]:
-    query = db.query(Nilai).join(Nilai.guru_mengajar)
-    if kelas_id:
-        query = query.filter(GuruMengajar.kelas_id == kelas_id)
-    nilai_list = query.all()
+def laporan_by_kelas(db: Session, kelas_id: int | None = None, current_user: CurrentUser | None = None) -> list[dict]:
+    kelas_ids = None
+    if current_user and current_user.role == "guru":
+        if not current_user.guru:
+            return []
+        kelas_ids = get_kelas_ids_by_guru(db, current_user.guru.id)
+        if not kelas_ids:
+            return []
+    nilai_list = get_nilai_joined(db, kelas_id=kelas_id, kelas_ids=kelas_ids)
     kelas_map: dict[int, dict] = {}
     for n in nilai_list:
         if n.guru_mengajar and n.guru_mengajar.kelas:
@@ -24,7 +33,7 @@ def laporan_by_kelas(db: Session, kelas_id: int | None = None) -> list[dict]:
     result = []
     for k_id, k_data in kelas_map.items():
         k_nama = k_data["nama"]
-        nilai_dicts = [n.to_dict() for n in k_data["items"]]
+        nilai_dicts = nilai_list_to_dicts(k_data["items"])
         kelas_stats = generate_laporan_kelas(nilai_dicts, k_id, k_nama)
 
         siswa_map: dict[str, dict] = {}
@@ -65,14 +74,18 @@ def laporan_by_kelas(db: Session, kelas_id: int | None = None) -> list[dict]:
     return result
 
 
-def laporan_by_siswa(db: Session, nis: str) -> dict:
-    siswa = db.query(Siswa).filter(Siswa.nis == nis).first()
+def laporan_by_siswa(db: Session, nis: str, current_user: CurrentUser | None = None) -> dict:
+    siswa = get_siswa_by_nis(db, nis)
     if not siswa:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Siswa tidak ditemukan"
-        )
-    nilai_list = db.query(Nilai).filter(Nilai.nis == nis).all()
-    nilai_dicts = [n.to_dict() for n in nilai_list]
+        raise NotFoundException("Siswa tidak ditemukan")
+    if current_user and current_user.role == "guru":
+        if not current_user.guru:
+            raise ForbiddenException("Akun guru tidak valid")
+        guru_kelas_ids = get_kelas_ids_by_guru(db, current_user.guru.id)
+        if siswa.kelas_id not in guru_kelas_ids:
+            raise ForbiddenException("Anda tidak memiliki akses ke laporan siswa ini")
+    nilai_list = get_nilai_by_nis(db, nis)
+    nilai_dicts = nilai_list_to_dicts(nilai_list)
     ringkasan = generate_laporan_siswa(nilai_dicts)
     ringkasan.pop("detail", None)
     return {

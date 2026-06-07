@@ -10,6 +10,14 @@ def get_by_id(db: Session, kelas_id: int) -> Kelas | None:
     return db.query(Kelas).filter(Kelas.id == kelas_id).first()
 
 
+def get_by_nama(db: Session, nama: str) -> Kelas | None:
+    return db.query(Kelas).filter(Kelas.nama == nama).first()
+
+
+def get_by_nama_excluding(db: Session, nama: str, exclude_id: int) -> Kelas | None:
+    return db.query(Kelas).filter(Kelas.nama == nama, Kelas.id != exclude_id).first()
+
+
 def create(db: Session, kelas: Kelas) -> Kelas:
     db.add(kelas)
     db.commit()

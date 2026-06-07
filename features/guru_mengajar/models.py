@@ -11,7 +11,7 @@ class GuruMengajar(Base):
     mata_pelajaran_id: Mapped[int] = mapped_column(Integer, ForeignKey("mata_pelajaran.id", ondelete="CASCADE"), nullable=False)
 
     __table_args__ = (
-        UniqueConstraint("guru_id", "kelas_id", "mata_pelajaran_id", name="uq_guru_kelas_mapel"),
+        UniqueConstraint("guru_id", "kelas_id", "mata_pelajaran_id", name="uq_guru_kelas_matapelajaran"),
     )
 
     guru: Mapped["Guru"] = relationship(back_populates="mengajar_list")

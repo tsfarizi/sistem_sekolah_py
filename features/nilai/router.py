@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.orm import Session
-from core.dependencies import get_db, get_current_user
-from features.auth.models import User
+from core.dependencies import get_db, get_current_user, require_any_role, require_admin, CurrentUser
+from core.schemas import Message
 from features.nilai.schemas import NilaiCreate, NilaiUpdate, NilaiResponse
 from features.nilai.service import (
     list_nilai,
@@ -9,8 +9,8 @@ from features.nilai.service import (
     create_new_nilai,
     update_existing_nilai,
     list_nilai_by_siswa_service,
+    delete_existing_nilai,
 )
-from features.nilai.repository import get_nilai_by_id, delete_nilai as repo_delete_nilai
 
 router = APIRouter(prefix="/api/nilai", tags=["Nilai"])
 
@@ -20,7 +20,7 @@ def get_all(
     kelas_id: int | None = Query(None),
     mata_pelajaran_id: int | None = Query(None),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     return list_nilai(db, current_user, kelas_id=kelas_id, mata_pelajaran_id=mata_pelajaran_id)
 
@@ -29,7 +29,7 @@ def get_all(
 def get_by_siswa(
     nis: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     return list_nilai_by_siswa_service(db, nis, current_user)
 
@@ -38,7 +38,7 @@ def get_by_siswa(
 def get_by_id(
     id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     return detail_nilai(db, id)
 
@@ -47,12 +47,8 @@ def get_by_id(
 def create(
     data: NilaiCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_any_role("admin", "guru")),
 ):
-    if current_user.role not in ["admin", "guru"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
-        )
     return create_new_nilai(db, data, current_user)
 
 
@@ -61,29 +57,16 @@ def update(
     id: int,
     data: NilaiUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_any_role("admin", "guru")),
 ):
-    if current_user.role not in ["admin", "guru"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
-        )
     return update_existing_nilai(db, id, data, current_user)
 
 
-@router.delete("/{id}")
+@router.delete("/{id}", response_model=Message)
 def delete(
     id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(require_admin),
 ):
-    if current_user.role != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
-        )
-    nilai = get_nilai_by_id(db, id)
-    if not nilai:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Nilai tidak ditemukan"
-        )
-    repo_delete_nilai(db, nilai)
+    delete_existing_nilai(db, id, current_user)
     return {"message": "Nilai berhasil dihapus"}

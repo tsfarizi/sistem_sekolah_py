@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict
-from core.schemas import GuruRef, KelasRef, MapelRef
+from core.schemas import GuruRef, KelasRef, MataPelajaranRef
 
 
 class GuruMengajarCreate(BaseModel):
@@ -16,4 +16,4 @@ class GuruMengajarResponse(BaseModel):
     mata_pelajaran_id: int
     guru: GuruRef
     kelas: KelasRef
-    mata_pelajaran: MapelRef
+    mata_pelajaran: MataPelajaranRef

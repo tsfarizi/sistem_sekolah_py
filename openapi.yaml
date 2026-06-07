@@ -6,7 +6,7 @@ info:
     Mendukung 3 role: admin, guru, siswa.
     Formula: Nilai Akhir = (30% × Tugas) + (30% × UTS) + (40% × UAS).
     Syarat Lulus: Nilai Akhir ≥ 70.
-  version: "1.1.0"
+  version: "1.0.0"
   contact:
     name: Developer
     email: dev@sekolah.id
@@ -85,21 +85,10 @@ components:
           description: JWT access token
           example: "eyJhbGciOiJIUzI1NiIs..."
         user:
-          type: object
-          properties:
-            id:
-              type: integer
-              example: 1
-            username:
-              type: string
-              example: "admin"
-            role:
-              type: string
-              enum: [admin, guru, siswa]
-              example: "admin"
-            nama:
-              type: string
-              example: "Administrator"
+          $ref: '#/components/schemas/UserResponse'
+      required:
+        - token
+        - user
 
     ChangePasswordRequest:
       type: object
@@ -145,6 +134,11 @@ components:
         nama:
           type: string
           example: "Administrator"
+      required:
+        - id
+        - username
+        - role
+        - nama
 
     UserCreate:
       type: object
@@ -427,6 +421,9 @@ components:
         - guru_id
         - kelas_id
         - mata_pelajaran_id
+        - guru
+        - kelas
+        - mata_pelajaran
 
     GuruMengajarCreate:
       type: object
@@ -508,6 +505,8 @@ components:
         - uas
         - nilai_akhir
         - status
+        - created_at
+        - updated_at
 
     NilaiCreate:
       type: object
@@ -517,7 +516,7 @@ components:
           example: "20240001"
         guru_mengajar_id:
           type: integer
-          description: ID dari GuruMengajar (guru + kelas + mapel)
+          description: ID dari GuruMengajar (guru + kelas + mata pelajaran)
           example: 1
         tugas:
           type: number
@@ -576,7 +575,7 @@ components:
             rata_rata:
               type: number
               example: 81.67
-            jumlah_mapel:
+            jumlah_matapelajaran:
               type: integer
               example: 5
             lulus:
@@ -588,7 +587,7 @@ components:
             status_akhir:
               type: string
               enum: [Lulus, Tidak Lulus]
-              description: "Lulus jika semua mapel lulus"
+              description: "Lulus jika semua mata pelajaran lulus"
               example: "Lulus"
 
     LaporanKelasResponse:
@@ -741,7 +740,7 @@ paths:
       tags:
         - Users
       summary: List semua user
-      description: Hanya role Admin.
+      description: Semua role terautentikasi.
       operationId: listUsers
       responses:
         '200':
@@ -784,7 +783,7 @@ paths:
       tags:
         - Users
       summary: Detail user by ID
-      description: Hanya role Admin.
+      description: Semua role terautentikasi.
       operationId: getUserById
       parameters:
         - name: user_id
@@ -1422,7 +1421,7 @@ paths:
       summary: Assign guru ke kelas + mata pelajaran
       description: >
         Hanya role Admin.
-        Satu guru bisa mengajar banyak mapel di banyak kelas.
+        Satu guru bisa mengajar banyak mata pelajaran di banyak kelas.
         Kombinasi (guru_id, kelas_id, mata_pelajaran_id) harus unik.
       operationId: createGuruMengajar
       requestBody:
@@ -1521,7 +1520,7 @@ paths:
           example: 1
       responses:
         '200':
-          description: Daftar nilai (dengan expanded data guru, mapel, kelas)
+          description: Daftar nilai (dengan expanded data guru, mata pelajaran, kelas)
           content:
             application/json:
               schema:
@@ -1667,7 +1666,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/Nilai'
         '403':
-          description: Siswa mencoba akses nilai siswa lain
+          description: Forbidden (bukan Admin atau Guru, atau Guru tidak mengajar di kelas siswa)
         '404':
           description: Siswa tidak ditemukan
 
@@ -1680,8 +1679,9 @@ paths:
         - Laporan
       summary: Laporan per kelas
       description: >
-        Admin & Guru.
-        Jika parameter kelas_id tidak diberikan, return semua kelas.
+        Admin: lihat semua kelas.
+        Guru: hanya lihat kelas yang dia ajar.
+        Jika parameter kelas_id tidak diberikan, return semua kelas yang diizinkan.
       operationId: getLaporanKelas
       parameters:
         - name: kelas_id
@@ -1700,7 +1700,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/LaporanKelasResponse'
         '403':
-          description: Forbidden (Siswa tidak boleh akses)
+          description: Forbidden (bukan Admin atau Guru)
 
   /laporan/siswa/{nis}:
     get:
@@ -1708,8 +1708,8 @@ paths:
         - Laporan
       summary: Laporan individu siswa
       description: >
-        Admin & Guru: lihat laporan siswa manapun.
-        Siswa: hanya lihat laporan sendiri.
+        Admin: lihat laporan siswa manapun.
+        Guru: hanya lihat laporan siswa di kelas yang dia ajar.
       operationId: getLaporanSiswa
       parameters:
         - name: nis

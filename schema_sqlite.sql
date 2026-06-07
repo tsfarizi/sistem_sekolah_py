@@ -51,7 +51,7 @@ CREATE TABLE guru_mengajar (
 	kelas_id INTEGER NOT NULL, 
 	mata_pelajaran_id INTEGER NOT NULL, 
 	PRIMARY KEY (id), 
-	CONSTRAINT uq_guru_kelas_mapel UNIQUE (guru_id, kelas_id, mata_pelajaran_id), 
+	CONSTRAINT uq_guru_kelas_matapelajaran UNIQUE (guru_id, kelas_id, mata_pelajaran_id), 
 	FOREIGN KEY(guru_id) REFERENCES guru (id) ON DELETE CASCADE, 
 	FOREIGN KEY(kelas_id) REFERENCES kelas (id) ON DELETE CASCADE, 
 	FOREIGN KEY(mata_pelajaran_id) REFERENCES mata_pelajaran (id) ON DELETE CASCADE

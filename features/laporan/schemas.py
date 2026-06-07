@@ -1,3 +1,4 @@
+from typing import Literal
 from pydantic import BaseModel
 from features.siswa.schemas import SiswaResponse
 from features.nilai.schemas import NilaiResponse
@@ -5,10 +6,10 @@ from features.nilai.schemas import NilaiResponse
 
 class RingkasanSiswa(BaseModel):
     rata_rata: float
-    jumlah_mapel: int
+    jumlah_matapelajaran: int
     lulus: int
     tidak_lulus: int
-    status_akhir: str
+    status_akhir: Literal["Lulus", "Tidak Lulus"]
 
 
 class LaporanSiswaResponse(BaseModel):

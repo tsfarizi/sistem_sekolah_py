@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
-from core.dependencies import get_db, get_current_user
-from features.auth.models import User
+from core.dependencies import get_db, get_current_user, require_admin, CurrentUser
+from core.schemas import Message
 from features.auth.schemas import (
     LoginRequest, LoginResponse,
     ChangePasswordRequest, ResetPasswordRequest,
@@ -21,27 +21,23 @@ def login(data: LoginRequest, db: Session = Depends(get_db)):
     return authenticate(db, data)
 
 
-@router.put("/change-password")
+@router.put("/change-password", response_model=Message)
 def change_password_endpoint(
     data: ChangePasswordRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     change_password(db, current_user, data)
     return {"message": "Password berhasil diubah"}
 
 
-@router.put("/reset-password/{user_id}")
+@router.put("/reset-password/{user_id}", response_model=Message)
 def reset_password_endpoint(
     user_id: int,
     data: ResetPasswordRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    _: CurrentUser = Depends(require_admin),
 ):
-    if current_user.role != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
-        )
     reset_password(db, user_id, data.new_password)
     return {"message": "Password berhasil direset"}
 
@@ -49,7 +45,7 @@ def reset_password_endpoint(
 @user_router.get("", response_model=list[UserResponse])
 def get_all_users(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     return list_users(db)
 
@@ -58,7 +54,7 @@ def get_all_users(
 def get_user_by_id(
     user_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    current_user: CurrentUser = Depends(get_current_user),
 ):
     return get_user(db, user_id)
 
@@ -67,12 +63,8 @@ def get_user_by_id(
 def create_new_user(
     data: UserCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    _: CurrentUser = Depends(require_admin),
 ):
-    if current_user.role != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
-        )
     return create_user(db, data)
 
 
@@ -81,24 +73,16 @@ def update_existing_user(
     user_id: int,
     data: UserUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    _: CurrentUser = Depends(require_admin),
 ):
-    if current_user.role != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
-        )
     return update_user(db, user_id, data)
 
 
-@user_router.delete("/{user_id}")
+@user_router.delete("/{user_id}", response_model=Message)
 def delete_existing_user(
     user_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    _: CurrentUser = Depends(require_admin),
 ):
-    if current_user.role != "admin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
-        )
     delete_user(db, user_id)
     return {"message": "User berhasil dihapus"}

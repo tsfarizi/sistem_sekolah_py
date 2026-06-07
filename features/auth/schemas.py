@@ -1,14 +1,14 @@
-from typing import Optional
-from pydantic import BaseModel, ConfigDict, field_validator
+from typing import Optional, Literal
+from pydantic import BaseModel, ConfigDict, field_validator, Field
 
 
 class LoginRequest(BaseModel):
-    username: str
-    password: str
+    username: str = Field(min_length=1)
+    password: str = Field(min_length=1)
 
 
 class ChangePasswordRequest(BaseModel):
-    old_password: str
+    old_password: str = Field(min_length=1)
     new_password: str
 
     @field_validator("new_password")
@@ -34,7 +34,7 @@ class UserResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     username: str
-    role: str
+    role: Literal["admin", "guru", "siswa"]
     nama: str
 
 

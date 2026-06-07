@@ -1,23 +1,24 @@
-from sqlalchemy.orm import Session
 from datetime import datetime
-from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
 from features.siswa.models import Siswa
 from features.siswa.repository import (
     get_all_siswa,
+    get_siswa_by_kelas,
     get_siswa_by_nis,
-    create_siswa as repo_create_siswa,
-    update_siswa as repo_update_siswa,
-    delete_siswa as repo_delete_siswa,
+    get_last_siswa_by_year,
+    get_user_by_username,
+    get_kelas_by_id,
+    create_siswa_with_user,
+    update_siswa,
+    delete_siswa_and_user,
 )
 from features.siswa.schemas import SiswaCreate, SiswaUpdate
-from features.auth.models import User
-from features.kelas.models import Kelas
-from core.security import hash_password
+from core.exceptions import NotFoundException, BadRequestException
 
 
 def _generate_nis(db: Session) -> str:
     year = str(datetime.utcnow().year)
-    last = db.query(Siswa).filter(Siswa.nis.like(f"{year}%")).order_by(Siswa.nis.desc()).first()
+    last = get_last_siswa_by_year(db, year)
     if not last:
         return f"{year}0001"
     try:
@@ -29,16 +30,14 @@ def _generate_nis(db: Session) -> str:
 
 def list_siswa(db: Session, kelas_id: int | None = None) -> list[Siswa]:
     if kelas_id:
-        return db.query(Siswa).filter(Siswa.kelas_id == kelas_id).all()
+        return get_siswa_by_kelas(db, kelas_id)
     return get_all_siswa(db)
 
 
 def detail_siswa(db: Session, nis: str) -> Siswa:
     siswa = get_siswa_by_nis(db, nis)
     if not siswa:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Siswa tidak ditemukan"
-        )
+        raise NotFoundException("Siswa tidak ditemukan")
     return siswa
 
 
@@ -46,67 +45,35 @@ def create_new_siswa(db: Session, data: SiswaCreate) -> Siswa:
     nis = data.nis if data.nis else _generate_nis(db)
     existing = get_siswa_by_nis(db, nis)
     if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="NIS sudah digunakan"
-        )
-    existing_user = db.query(User).filter(User.username == data.username).first()
+        raise BadRequestException("NIS sudah digunakan")
+    existing_user = get_user_by_username(db, data.username)
     if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Username sudah digunakan"
-        )
-    kelas = db.query(Kelas).filter(Kelas.id == data.kelas_id).first()
+        raise BadRequestException("Username sudah digunakan")
+    kelas = get_kelas_by_id(db, data.kelas_id)
     if not kelas:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Kelas tidak ditemukan"
-        )
-    user = User(
-        username=data.username,
-        password_hash=hash_password(data.password),
-        role="siswa",
-        nama=data.nama,
-    )
-    db.add(user)
-    db.flush()
-    siswa = Siswa(
-        nis=nis,
-        nama=data.nama,
-        kelas_id=data.kelas_id,
-        user_id=user.id,
-    )
-    return repo_create_siswa(db, siswa)
+        raise BadRequestException("Kelas tidak ditemukan")
+    siswa = Siswa(nis=nis, nama=data.nama, kelas_id=data.kelas_id)
+    return create_siswa_with_user(db, siswa, data.username, data.password, data.nama)
 
 
 def update_existing_siswa(db: Session, nis: str, data: SiswaUpdate) -> Siswa:
     siswa = get_siswa_by_nis(db, nis)
     if not siswa:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Siswa tidak ditemukan"
-        )
+        raise NotFoundException("Siswa tidak ditemukan")
     if data.nama is not None:
         siswa.nama = data.nama
         if siswa.user:
             siswa.user.nama = data.nama
     if data.kelas_id is not None:
-        kelas = db.query(Kelas).filter(Kelas.id == data.kelas_id).first()
+        kelas = get_kelas_by_id(db, data.kelas_id)
         if not kelas:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Kelas tidak ditemukan"
-            )
+            raise BadRequestException("Kelas tidak ditemukan")
         siswa.kelas_id = data.kelas_id
-    return repo_update_siswa(db, siswa)
+    return update_siswa(db, siswa)
 
 
 def delete_existing_siswa(db: Session, nis: str) -> None:
     siswa = get_siswa_by_nis(db, nis)
     if not siswa:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Siswa tidak ditemukan"
-        )
-    user_id = siswa.user_id
-    db.delete(siswa)
-    db.flush()
-    if user_id:
-        user = db.query(User).filter(User.id == user_id).first()
-        if user:
-            db.delete(user)
-    db.commit()
+        raise NotFoundException("Siswa tidak ditemukan")
+    delete_siswa_and_user(db, siswa)

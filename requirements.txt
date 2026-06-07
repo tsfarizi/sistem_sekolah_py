@@ -5,7 +5,5 @@ pydantic
 pyjwt
 bcrypt
 python-multipart
-sqladmin
-itsdangerous
 python-dotenv
 psycopg2-binary

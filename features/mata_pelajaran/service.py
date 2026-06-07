@@ -1,43 +1,43 @@
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
 from features.mata_pelajaran.models import MataPelajaran
-from features.mata_pelajaran.repository import get_all, get_by_id, create, update, delete
+from features.mata_pelajaran.repository import get_all, get_by_id, get_by_nama, get_by_nama_excluding, create, update, delete
 from features.mata_pelajaran.schemas import MataPelajaranCreate, MataPelajaranUpdate
+from core.exceptions import NotFoundException, BadRequestException
 
 
-def list_mapel(db: Session) -> list[MataPelajaran]:
+def list_matapelajaran(db: Session) -> list[MataPelajaran]:
     return get_all(db)
 
 
-def detail_mapel(db: Session, mapel_id: int) -> MataPelajaran:
-    mapel = get_by_id(db, mapel_id)
-    if not mapel:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mata pelajaran tidak ditemukan")
-    return mapel
+def detail_matapelajaran(db: Session, matapelajaran_id: int) -> MataPelajaran:
+    matapelajaran = get_by_id(db, matapelajaran_id)
+    if not matapelajaran:
+        raise NotFoundException("Mata pelajaran tidak ditemukan")
+    return matapelajaran
 
 
-def create_mapel(db: Session, data: MataPelajaranCreate) -> MataPelajaran:
-    existing = db.query(MataPelajaran).filter(MataPelajaran.nama == data.nama).first()
+def create_matapelajaran(db: Session, data: MataPelajaranCreate) -> MataPelajaran:
+    existing = get_by_nama(db, data.nama)
     if existing:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Mata pelajaran sudah ada")
-    mapel = MataPelajaran(nama=data.nama)
-    return create(db, mapel)
+        raise BadRequestException("Mata pelajaran sudah ada")
+    matapelajaran = MataPelajaran(nama=data.nama)
+    return create(db, matapelajaran)
 
 
-def update_mapel(db: Session, mapel_id: int, data: MataPelajaranUpdate) -> MataPelajaran:
-    mapel = get_by_id(db, mapel_id)
-    if not mapel:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mata pelajaran tidak ditemukan")
+def update_matapelajaran(db: Session, matapelajaran_id: int, data: MataPelajaranUpdate) -> MataPelajaran:
+    matapelajaran = get_by_id(db, matapelajaran_id)
+    if not matapelajaran:
+        raise NotFoundException("Mata pelajaran tidak ditemukan")
     if data.nama is not None:
-        existing = db.query(MataPelajaran).filter(MataPelajaran.nama == data.nama, MataPelajaran.id != mapel_id).first()
+        existing = get_by_nama_excluding(db, data.nama, matapelajaran_id)
         if existing:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Mata pelajaran sudah ada")
-        mapel.nama = data.nama
-    return update(db, mapel)
+            raise BadRequestException("Mata pelajaran sudah ada")
+        matapelajaran.nama = data.nama
+    return update(db, matapelajaran)
 
 
-def delete_mapel(db: Session, mapel_id: int) -> None:
-    mapel = get_by_id(db, mapel_id)
-    if not mapel:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mata pelajaran tidak ditemukan")
-    delete(db, mapel)
+def delete_matapelajaran(db: Session, matapelajaran_id: int) -> None:
+    matapelajaran = get_by_id(db, matapelajaran_id)
+    if not matapelajaran:
+        raise NotFoundException("Mata pelajaran tidak ditemukan")
+    delete(db, matapelajaran)
