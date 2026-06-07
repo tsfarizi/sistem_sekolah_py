@@ -5,7 +5,7 @@ from features.kelas.models import Kelas
 from features.mata_pelajaran.models import MataPelajaran
 
 
-def get_all(db: Session, guru_id: str | None = None, kelas_id: int | None = None, mata_pelajaran_id: int | None = None) -> list[GuruMengajar]:
+def get_all_guru_mengajar(db: Session, guru_id: str | None = None, kelas_id: int | None = None, mata_pelajaran_id: int | None = None) -> list[GuruMengajar]:
     query = db.query(GuruMengajar).options(
         joinedload(GuruMengajar.guru),
         joinedload(GuruMengajar.kelas),
@@ -20,12 +20,12 @@ def get_all(db: Session, guru_id: str | None = None, kelas_id: int | None = None
     return query.all()
 
 
-def get_by_id(db: Session, gm_id: int) -> GuruMengajar | None:
+def get_guru_mengajar_by_id(db: Session, guru_mengajar_id: int) -> GuruMengajar | None:
     return db.query(GuruMengajar).options(
         joinedload(GuruMengajar.guru),
         joinedload(GuruMengajar.kelas),
         joinedload(GuruMengajar.mata_pelajaran),
-    ).filter(GuruMengajar.id == gm_id).first()
+    ).filter(GuruMengajar.id == guru_mengajar_id).first()
 
 
 def get_by_combination(db: Session, guru_id: str, kelas_id: int, mata_pelajaran_id: int) -> GuruMengajar | None:
@@ -48,13 +48,6 @@ def get_matapelajaran_by_id(db: Session, matapelajaran_id: int) -> MataPelajaran
     return db.query(MataPelajaran).filter(MataPelajaran.id == matapelajaran_id).first()
 
 
-def create(db: Session, gm: GuruMengajar) -> GuruMengajar:
-    db.add(gm)
-    db.commit()
-    db.refresh(gm)
-    return gm
-
-
 def create_and_eager_load(db: Session, gm: GuruMengajar) -> GuruMengajar:
     db.add(gm)
     db.commit()
@@ -67,6 +60,6 @@ def create_and_eager_load(db: Session, gm: GuruMengajar) -> GuruMengajar:
     return result
 
 
-def delete(db: Session, gm: GuruMengajar) -> None:
+def delete_guru_mengajar(db: Session, gm: GuruMengajar) -> None:
     db.delete(gm)
     db.commit()

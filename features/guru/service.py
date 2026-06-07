@@ -1,12 +1,12 @@
 from sqlalchemy.orm import Session
 from features.guru.models import Guru
 from features.guru.repository import (
-    get_all_guru,
-    get_guru_by_id,
+    get_all_guru as repo_get_all,
+    get_guru_by_id as repo_get_by_id,
     get_last_guru,
     get_user_by_username,
     create_guru_with_user,
-    update_guru,
+    update_guru as repo_update_guru,
     delete_guru_and_user,
 )
 from features.guru.schemas import GuruCreate, GuruUpdate
@@ -25,19 +25,19 @@ def _generate_guru_id(db: Session) -> str:
 
 
 def list_guru(db: Session) -> list[Guru]:
-    return get_all_guru(db)
+    return repo_get_all(db)
 
 
 def detail_guru(db: Session, guru_id: str) -> Guru:
-    guru = get_guru_by_id(db, guru_id)
+    guru = repo_get_by_id(db, guru_id)
     if not guru:
         raise NotFoundException("Guru tidak ditemukan")
     return guru
 
 
-def create_new_guru(db: Session, data: GuruCreate) -> Guru:
+def create_guru(db: Session, data: GuruCreate) -> Guru:
     guru_id = data.id if data.id else _generate_guru_id(db)
-    existing = get_guru_by_id(db, guru_id)
+    existing = repo_get_by_id(db, guru_id)
     if existing:
         raise BadRequestException("ID Guru sudah digunakan")
     existing_user = get_user_by_username(db, data.username)
@@ -47,19 +47,19 @@ def create_new_guru(db: Session, data: GuruCreate) -> Guru:
     return create_guru_with_user(db, guru, data.username, data.password, data.nama)
 
 
-def update_existing_guru(db: Session, guru_id: str, data: GuruUpdate) -> Guru:
-    guru = get_guru_by_id(db, guru_id)
+def update_guru(db: Session, guru_id: str, data: GuruUpdate) -> Guru:
+    guru = repo_get_by_id(db, guru_id)
     if not guru:
         raise NotFoundException("Guru tidak ditemukan")
     if data.nama is not None:
         guru.nama = data.nama
         if guru.user:
             guru.user.nama = data.nama
-    return update_guru(db, guru)
+    return repo_update_guru(db, guru)
 
 
-def delete_existing_guru(db: Session, guru_id: str) -> None:
-    guru = get_guru_by_id(db, guru_id)
+def delete_guru(db: Session, guru_id: str) -> None:
+    guru = repo_get_by_id(db, guru_id)
     if not guru:
         raise NotFoundException("Guru tidak ditemukan")
     delete_guru_and_user(db, guru)

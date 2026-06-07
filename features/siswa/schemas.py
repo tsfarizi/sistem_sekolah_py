@@ -1,11 +1,10 @@
-from typing import Optional
 from pydantic import BaseModel, ConfigDict
 from core.schemas import KelasRef
 from features.nilai.schemas import NilaiResponse
 
 
 class SiswaCreate(BaseModel):
-    nis: Optional[str] = None
+    nis: str | None = None
     nama: str
     kelas_id: int
     username: str
@@ -13,8 +12,8 @@ class SiswaCreate(BaseModel):
 
 
 class SiswaUpdate(BaseModel):
-    nama: Optional[str] = None
-    kelas_id: Optional[int] = None
+    nama: str | None = None
+    kelas_id: int | None = None
 
 
 class SiswaResponse(BaseModel):
@@ -22,8 +21,8 @@ class SiswaResponse(BaseModel):
     nis: str
     nama: str
     kelas_id: int
-    kelas: Optional[KelasRef] = None
-    user_id: Optional[int] = None
+    kelas: KelasRef | None = None
+    user_id: int | None = None
 
 
 class SiswaWithNilaiResponse(SiswaResponse):

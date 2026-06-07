@@ -3,13 +3,7 @@ from sqlalchemy.orm import Session
 from core.dependencies import get_db, get_current_user, require_admin, CurrentUser
 from core.schemas import Message
 from features.siswa.schemas import SiswaCreate, SiswaUpdate, SiswaResponse, SiswaWithNilaiResponse
-from features.siswa.service import (
-    list_siswa,
-    detail_siswa,
-    create_new_siswa,
-    update_existing_siswa,
-    delete_existing_siswa,
-)
+from features.siswa.service import list_siswa, detail_siswa, create_siswa, update_siswa, delete_siswa
 
 router = APIRouter(prefix="/api/siswa", tags=["Siswa"])
 
@@ -38,7 +32,7 @@ def create(
     db: Session = Depends(get_db),
     _: CurrentUser = Depends(require_admin),
 ):
-    return create_new_siswa(db, data)
+    return create_siswa(db, data)
 
 
 @router.put("/{nis}", response_model=SiswaResponse)
@@ -48,7 +42,7 @@ def update(
     db: Session = Depends(get_db),
     _: CurrentUser = Depends(require_admin),
 ):
-    return update_existing_siswa(db, nis, data)
+    return update_siswa(db, nis, data)
 
 
 @router.delete("/{nis}", response_model=Message)
@@ -57,5 +51,5 @@ def delete(
     db: Session = Depends(get_db),
     _: CurrentUser = Depends(require_admin),
 ):
-    delete_existing_siswa(db, nis)
+    delete_siswa(db, nis)
     return {"message": "Siswa berhasil dihapus"}

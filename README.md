@@ -111,6 +111,22 @@ uv run alembic upgrade head
 - Selalu review file migration sebelum dijalankan di production
 - Untuk development, jika database masih kosong bisa langsung hapus DB dan restart — `init_db()` akan membuat ulang tabel
 
+## Generate Skema SQL (opsional)
+
+Tiga file skema SQL tersedia untuk masing-masing dialek database. Untuk me-regenerate semua file skema dari definisi model terbaru:
+
+```bash
+uv run python generate_schema.py
+```
+
+Menghasilkan tiga file:
+
+| File | Dialek |
+|------|--------|
+| `schema_postgresql.sql` | PostgreSQL |
+| `schema_sqlite.sql` | SQLite |
+| `schema_mysql.sql` | MySQL |
+
 ## Memulai Menggunakan
 
 Setelah server berjalan, urutan operasi yang direkomendasikan:

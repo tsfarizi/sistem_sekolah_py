@@ -3,8 +3,8 @@ from features.auth.models import User
 from features.auth.schemas import LoginRequest, LoginResponse, UserResponse, ChangePasswordRequest, UserCreate, UserUpdate
 from features.auth.repository import (
     get_user_by_username,
-    get_user_by_id,
-    get_all_users,
+    get_user_by_id as repo_get_user_by_id,
+    get_all_users as repo_get_all_users,
     check_username_conflict,
     create_user as repo_create_user,
     update_user as repo_update_user,
@@ -33,7 +33,7 @@ def change_password(db: Session, current_user: User, data: ChangePasswordRequest
 
 
 def reset_password(db: Session, user_id: int, new_password: str) -> None:
-    user = get_user_by_id(db, user_id)
+    user = repo_get_user_by_id(db, user_id)
     if not user:
         raise NotFoundException("User tidak ditemukan")
     user.password_hash = hash_password(new_password)
@@ -41,11 +41,11 @@ def reset_password(db: Session, user_id: int, new_password: str) -> None:
 
 
 def list_users(db: Session) -> list[User]:
-    return get_all_users(db)
+    return repo_get_all_users(db)
 
 
-def get_user(db: Session, user_id: int) -> User:
-    user = get_user_by_id(db, user_id)
+def detail_user(db: Session, user_id: int) -> User:
+    user = repo_get_user_by_id(db, user_id)
     if not user:
         raise NotFoundException("User tidak ditemukan")
     return user
@@ -65,7 +65,7 @@ def create_user(db: Session, data: UserCreate) -> User:
 
 
 def update_user(db: Session, user_id: int, data: UserUpdate) -> User:
-    user = get_user_by_id(db, user_id)
+    user = repo_get_user_by_id(db, user_id)
     if not user:
         raise NotFoundException("User tidak ditemukan")
     if data.username is not None:
@@ -83,7 +83,7 @@ def update_user(db: Session, user_id: int, data: UserUpdate) -> User:
 
 
 def delete_user(db: Session, user_id: int) -> None:
-    user = get_user_by_id(db, user_id)
+    user = repo_get_user_by_id(db, user_id)
     if not user:
         raise NotFoundException("User tidak ditemukan")
     repo_delete_user(db, user)

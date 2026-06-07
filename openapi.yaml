@@ -312,7 +312,7 @@ components:
           type: integer
           example: 2
 
-    SiswaWithNilai:
+    SiswaWithNilaiResponse:
       allOf:
         - $ref: '#/components/schemas/Siswa'
         - type: object
@@ -1183,7 +1183,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SiswaWithNilai'
+                $ref: '#/components/schemas/SiswaWithNilaiResponse'
         '404':
           description: Siswa tidak ditemukan
           content:

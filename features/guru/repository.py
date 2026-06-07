@@ -16,13 +16,6 @@ def get_last_guru(db: Session) -> Guru | None:
     return db.query(Guru).order_by(Guru.id.desc()).first()
 
 
-def create_guru(db: Session, guru: Guru) -> Guru:
-    db.add(guru)
-    db.commit()
-    db.refresh(guru)
-    return guru
-
-
 def create_guru_with_user(db: Session, guru: Guru, username: str, password: str, nama: str) -> Guru:
     user = User(
         username=username,
@@ -43,10 +36,6 @@ def get_user_by_username(db: Session, username: str) -> User | None:
     return db.query(User).filter(User.username == username).first()
 
 
-def get_user_by_id(db: Session, user_id: int) -> User | None:
-    return db.query(User).filter(User.id == user_id).first()
-
-
 def update_guru(db: Session, guru: Guru) -> Guru:
     db.commit()
     db.refresh(guru)
@@ -61,9 +50,4 @@ def delete_guru_and_user(db: Session, guru: Guru) -> None:
         user = db.query(User).filter(User.id == user_id).first()
         if user:
             db.delete(user)
-    db.commit()
-
-
-def delete_guru(db: Session, guru: Guru) -> None:
-    db.delete(guru)
     db.commit()

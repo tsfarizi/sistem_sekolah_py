@@ -4,10 +4,6 @@ from features.siswa.models import Siswa
 from features.guru_mengajar.models import GuruMengajar
 
 
-def get_all_nilai(db: Session) -> list[Nilai]:
-    return db.query(Nilai).all()
-
-
 def get_nilai_by_id(db: Session, nilai_id: int) -> Nilai | None:
     return db.query(Nilai).filter(Nilai.id == nilai_id).first()
 

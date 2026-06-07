@@ -2,16 +2,16 @@ from sqlalchemy.orm import Session
 from core.dependencies import CurrentUser
 from features.nilai.models import Nilai
 from features.nilai.repository import (
-    get_nilai_by_id,
+    get_nilai_by_id as repo_get_by_id,
     get_nilai_by_siswa,
     get_nilai_filtered,
     get_siswa_by_nis,
     get_siswa_by_user_id,
     get_guru_mengajar_by_id,
     get_guru_mengajar_by_id_and_guru,
-    create_nilai,
-    update_nilai,
-    delete_nilai,
+    create_nilai as repo_create_nilai,
+    update_nilai as repo_update_nilai,
+    delete_nilai as repo_delete_nilai,
 )
 from features.nilai.schemas import NilaiCreate, NilaiUpdate
 from features.nilai.utils import validasi_nilai, hitung_nilai_akhir, tentukan_status
@@ -30,13 +30,13 @@ def list_nilai(db: Session, current_user: CurrentUser, kelas_id: int | None = No
 
 
 def detail_nilai(db: Session, nilai_id: int) -> Nilai:
-    nilai = get_nilai_by_id(db, nilai_id)
+    nilai = repo_get_by_id(db, nilai_id)
     if not nilai:
         raise NotFoundException("Nilai tidak ditemukan")
     return nilai
 
 
-def create_new_nilai(db: Session, data: NilaiCreate, current_user: CurrentUser) -> Nilai:
+def create_nilai(db: Session, data: NilaiCreate, current_user: CurrentUser) -> Nilai:
     if not validasi_nilai(data.tugas):
         raise BadRequestException("Nilai tugas harus 0-100")
     if not validasi_nilai(data.uts):
@@ -63,11 +63,11 @@ def create_new_nilai(db: Session, data: NilaiCreate, current_user: CurrentUser) 
         nilai_akhir=hitung_nilai_akhir(data.tugas, data.uts, data.uas),
         status=tentukan_status(hitung_nilai_akhir(data.tugas, data.uts, data.uas)),
     )
-    return create_nilai(db, nilai)
+    return repo_create_nilai(db, nilai)
 
 
-def update_existing_nilai(db: Session, nilai_id: int, data: NilaiUpdate, current_user: CurrentUser) -> Nilai:
-    nilai = get_nilai_by_id(db, nilai_id)
+def update_nilai(db: Session, nilai_id: int, data: NilaiUpdate, current_user: CurrentUser) -> Nilai:
+    nilai = repo_get_by_id(db, nilai_id)
     if not nilai:
         raise NotFoundException("Nilai tidak ditemukan")
     if current_user.role == "guru":
@@ -87,22 +87,22 @@ def update_existing_nilai(db: Session, nilai_id: int, data: NilaiUpdate, current
         nilai.uas = data.uas
     nilai.nilai_akhir = hitung_nilai_akhir(nilai.tugas, nilai.uts, nilai.uas)
     nilai.status = tentukan_status(nilai.nilai_akhir)
-    return update_nilai(db, nilai)
+    return repo_update_nilai(db, nilai)
 
 
-def list_nilai_by_siswa_service(db: Session, nis: str, current_user: CurrentUser) -> list[Nilai]:
+def list_nilai_by_siswa(db: Session, nis: str, current_user: CurrentUser) -> list[Nilai]:
     siswa = get_siswa_by_nis(db, nis)
     if not siswa:
         raise NotFoundException("Siswa tidak ditemukan")
     if current_user.role == "siswa":
         current_siswa = get_siswa_by_user_id(db, current_user.id)
         if not current_siswa or current_siswa.nis != nis:
-            raise ForbiddenException("Access denied")
+            raise ForbiddenException("Akses ditolak")
     return get_nilai_by_siswa(db, nis)
 
 
-def delete_existing_nilai(db: Session, nilai_id: int, current_user: CurrentUser) -> None:
-    nilai = get_nilai_by_id(db, nilai_id)
+def delete_nilai(db: Session, nilai_id: int) -> None:
+    nilai = repo_get_by_id(db, nilai_id)
     if not nilai:
         raise NotFoundException("Nilai tidak ditemukan")
-    delete_nilai(db, nilai)
+    repo_delete_nilai(db, nilai)

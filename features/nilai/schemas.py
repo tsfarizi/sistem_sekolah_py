@@ -1,4 +1,4 @@
-from typing import Optional, Literal
+from typing import Literal
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 from core.schemas import GuruMengajarRef, SiswaRef
@@ -13,18 +13,18 @@ class NilaiCreate(BaseModel):
 
 
 class NilaiUpdate(BaseModel):
-    tugas: Optional[float] = Field(default=None, ge=0, le=100)
-    uts: Optional[float] = Field(default=None, ge=0, le=100)
-    uas: Optional[float] = Field(default=None, ge=0, le=100)
+    tugas: float | None = Field(default=None, ge=0, le=100)
+    uts: float | None = Field(default=None, ge=0, le=100)
+    uas: float | None = Field(default=None, ge=0, le=100)
 
 
 class NilaiResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
     nis: str
-    siswa: Optional[SiswaRef] = None
+    siswa: SiswaRef | None = None
     guru_mengajar_id: int
-    guru_mengajar: Optional[GuruMengajarRef] = None
+    guru_mengajar: GuruMengajarRef | None = None
     tugas: float
     uts: float
     uas: float

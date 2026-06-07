@@ -11,4 +11,4 @@ wheels/
 
 # Environment
 .env
-sekolah.db
+*.db

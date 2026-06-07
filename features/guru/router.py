@@ -3,13 +3,7 @@ from sqlalchemy.orm import Session
 from core.dependencies import get_db, get_current_user, require_admin, CurrentUser
 from core.schemas import Message
 from features.guru.schemas import GuruCreate, GuruUpdate, GuruResponse
-from features.guru.service import (
-    list_guru,
-    detail_guru,
-    create_new_guru,
-    update_existing_guru,
-    delete_existing_guru,
-)
+from features.guru.service import list_guru, detail_guru, create_guru, update_guru, delete_guru
 
 router = APIRouter(prefix="/api/guru", tags=["Guru"])
 
@@ -37,7 +31,7 @@ def create(
     db: Session = Depends(get_db),
     _: CurrentUser = Depends(require_admin),
 ):
-    return create_new_guru(db, data)
+    return create_guru(db, data)
 
 
 @router.put("/{id}", response_model=GuruResponse)
@@ -47,7 +41,7 @@ def update(
     db: Session = Depends(get_db),
     _: CurrentUser = Depends(require_admin),
 ):
-    return update_existing_guru(db, id, data)
+    return update_guru(db, id, data)
 
 
 @router.delete("/{id}", response_model=Message)
@@ -56,5 +50,5 @@ def delete(
     db: Session = Depends(get_db),
     _: CurrentUser = Depends(require_admin),
 ):
-    delete_existing_guru(db, id)
+    delete_guru(db, id)
     return {"message": "Guru berhasil dihapus"}

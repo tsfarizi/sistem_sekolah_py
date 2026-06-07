@@ -18,22 +18,22 @@ def get_current_user(
     token = credentials.credentials
     payload = decode_token(token)
     if payload is None:
-        raise UnauthorizedException("Invalid token")
+        raise UnauthorizedException("Token tidak valid")
     user = db.query(User).filter(User.id == payload["sub"]).first()
     if user is None:
-        raise UnauthorizedException("User not found")
+        raise UnauthorizedException("User tidak ditemukan")
     return user
 
 
 def require_admin(current_user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
     if current_user.role != "admin":
-        raise ForbiddenException("Access denied")
+        raise ForbiddenException("Akses ditolak")
     return current_user
 
 
 def require_any_role(*roles: str):
     def _check(current_user: CurrentUser = Depends(get_current_user)) -> CurrentUser:
         if current_user.role not in roles:
-            raise ForbiddenException("Access denied")
+            raise ForbiddenException("Akses ditolak")
         return current_user
     return _check

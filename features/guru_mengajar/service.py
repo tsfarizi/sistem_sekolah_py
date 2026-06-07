@@ -1,14 +1,14 @@
 from sqlalchemy.orm import Session
 from features.guru_mengajar.models import GuruMengajar
 from features.guru_mengajar.repository import (
-    get_all as repo_get_all,
-    get_by_id,
+    get_all_guru_mengajar as repo_get_all,
+    get_guru_mengajar_by_id as repo_get_by_id,
     get_by_combination,
     get_guru_by_id,
     get_kelas_by_id,
     get_matapelajaran_by_id,
     create_and_eager_load,
-    delete as repo_delete,
+    delete_guru_mengajar as repo_delete,
 )
 from features.guru_mengajar.schemas import GuruMengajarCreate
 from core.exceptions import NotFoundException, BadRequestException
@@ -18,8 +18,8 @@ def list_guru_mengajar(db: Session, guru_id: str | None = None, kelas_id: int | 
     return repo_get_all(db, guru_id=guru_id, kelas_id=kelas_id, mata_pelajaran_id=mata_pelajaran_id)
 
 
-def detail_guru_mengajar(db: Session, gm_id: int) -> GuruMengajar:
-    gm = get_by_id(db, gm_id)
+def detail_guru_mengajar(db: Session, guru_mengajar_id: int) -> GuruMengajar:
+    gm = repo_get_by_id(db, guru_mengajar_id)
     if not gm:
         raise NotFoundException("Data tidak ditemukan")
     return gm
@@ -46,8 +46,8 @@ def create_guru_mengajar(db: Session, data: GuruMengajarCreate) -> GuruMengajar:
     return create_and_eager_load(db, gm)
 
 
-def delete_guru_mengajar(db: Session, gm_id: int) -> None:
-    gm = get_by_id(db, gm_id)
+def delete_guru_mengajar(db: Session, guru_mengajar_id: int) -> None:
+    gm = repo_get_by_id(db, guru_mengajar_id)
     if not gm:
         raise NotFoundException("Data tidak ditemukan")
     repo_delete(db, gm)

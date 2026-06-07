@@ -1,4 +1,3 @@
-from typing import Optional
 from pydantic import BaseModel, ConfigDict
 
 
@@ -7,7 +6,7 @@ class KelasCreate(BaseModel):
 
 
 class KelasUpdate(BaseModel):
-    nama: Optional[str] = None
+    nama: str | None = None
 
 
 class KelasResponse(BaseModel):

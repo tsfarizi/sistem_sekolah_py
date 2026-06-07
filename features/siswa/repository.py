@@ -33,10 +33,6 @@ def get_user_by_username(db: Session, username: str) -> User | None:
     return db.query(User).filter(User.username == username).first()
 
 
-def get_user_by_id(db: Session, user_id: int) -> User | None:
-    return db.query(User).filter(User.id == user_id).first()
-
-
 def get_kelas_by_id(db: Session, kelas_id: int) -> Kelas | None:
     return db.query(Kelas).filter(Kelas.id == kelas_id).first()
 
@@ -57,13 +53,6 @@ def create_siswa_with_user(db: Session, siswa: Siswa, username: str, password: s
     return siswa
 
 
-def create_siswa(db: Session, siswa: Siswa) -> Siswa:
-    db.add(siswa)
-    db.commit()
-    db.refresh(siswa)
-    return siswa
-
-
 def update_siswa(db: Session, siswa: Siswa) -> Siswa:
     db.commit()
     db.refresh(siswa)
@@ -78,9 +67,4 @@ def delete_siswa_and_user(db: Session, siswa: Siswa) -> None:
         user = db.query(User).filter(User.id == user_id).first()
         if user:
             db.delete(user)
-    db.commit()
-
-
-def delete_siswa(db: Session, siswa: Siswa) -> None:
-    db.delete(siswa)
     db.commit()

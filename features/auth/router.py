@@ -9,7 +9,7 @@ from features.auth.schemas import (
 )
 from features.auth.service import (
     authenticate, change_password, reset_password,
-    list_users, get_user, create_user, update_user, delete_user,
+    list_users, detail_user, create_user, update_user, delete_user,
 )
 
 router = APIRouter(prefix="/api/auth", tags=["Auth"])
@@ -43,7 +43,7 @@ def reset_password_endpoint(
 
 
 @user_router.get("", response_model=list[UserResponse])
-def get_all_users(
+def get_all(
     db: Session = Depends(get_db),
     current_user: CurrentUser = Depends(get_current_user),
 ):
@@ -51,16 +51,16 @@ def get_all_users(
 
 
 @user_router.get("/{user_id}", response_model=UserResponse)
-def get_user_by_id(
+def get_by_id(
     user_id: int,
     db: Session = Depends(get_db),
     current_user: CurrentUser = Depends(get_current_user),
 ):
-    return get_user(db, user_id)
+    return detail_user(db, user_id)
 
 
 @user_router.post("", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def create_new_user(
+def create(
     data: UserCreate,
     db: Session = Depends(get_db),
     _: CurrentUser = Depends(require_admin),
@@ -69,7 +69,7 @@ def create_new_user(
 
 
 @user_router.put("/{user_id}", response_model=UserResponse)
-def update_existing_user(
+def update(
     user_id: int,
     data: UserUpdate,
     db: Session = Depends(get_db),
@@ -79,7 +79,7 @@ def update_existing_user(
 
 
 @user_router.delete("/{user_id}", response_model=Message)
-def delete_existing_user(
+def delete(
     user_id: int,
     db: Session = Depends(get_db),
     _: CurrentUser = Depends(require_admin),

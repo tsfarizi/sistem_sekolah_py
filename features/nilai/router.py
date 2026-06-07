@@ -6,10 +6,10 @@ from features.nilai.schemas import NilaiCreate, NilaiUpdate, NilaiResponse
 from features.nilai.service import (
     list_nilai,
     detail_nilai,
-    create_new_nilai,
-    update_existing_nilai,
-    list_nilai_by_siswa_service,
-    delete_existing_nilai,
+    create_nilai,
+    update_nilai,
+    list_nilai_by_siswa,
+    delete_nilai,
 )
 
 router = APIRouter(prefix="/api/nilai", tags=["Nilai"])
@@ -31,7 +31,7 @@ def get_by_siswa(
     db: Session = Depends(get_db),
     current_user: CurrentUser = Depends(get_current_user),
 ):
-    return list_nilai_by_siswa_service(db, nis, current_user)
+    return list_nilai_by_siswa(db, nis, current_user)
 
 
 @router.get("/{id}", response_model=NilaiResponse)
@@ -49,7 +49,7 @@ def create(
     db: Session = Depends(get_db),
     current_user: CurrentUser = Depends(require_any_role("admin", "guru")),
 ):
-    return create_new_nilai(db, data, current_user)
+    return create_nilai(db, data, current_user)
 
 
 @router.put("/{id}", response_model=NilaiResponse)
@@ -59,7 +59,7 @@ def update(
     db: Session = Depends(get_db),
     current_user: CurrentUser = Depends(require_any_role("admin", "guru")),
 ):
-    return update_existing_nilai(db, id, data, current_user)
+    return update_nilai(db, id, data, current_user)
 
 
 @router.delete("/{id}", response_model=Message)
@@ -68,5 +68,5 @@ def delete(
     db: Session = Depends(get_db),
     current_user: CurrentUser = Depends(require_admin),
 ):
-    delete_existing_nilai(db, id, current_user)
+    delete_nilai(db, id)
     return {"message": "Nilai berhasil dihapus"}

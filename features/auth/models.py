@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 from sqlalchemy import String, Integer, DateTime
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from core.database import Base
@@ -14,5 +13,5 @@ class User(Base):
     nama: Mapped[str] = mapped_column(String(100), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    siswa: Mapped[Optional["Siswa"]] = relationship(back_populates="user", uselist=False)
-    guru: Mapped[Optional["Guru"]] = relationship(back_populates="user", uselist=False)
+    siswa: Mapped["Siswa | None"] = relationship(back_populates="user", uselist=False)
+    guru: Mapped["Guru | None"] = relationship(back_populates="user", uselist=False)

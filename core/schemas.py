@@ -1,4 +1,3 @@
-from typing import Optional
 from pydantic import BaseModel, ConfigDict
 
 
@@ -32,9 +31,9 @@ class GuruMengajarRef(BaseModel):
     guru_id: str
     kelas_id: int
     mata_pelajaran_id: int
-    guru: Optional[GuruRef] = None
-    kelas: Optional[KelasRef] = None
-    mata_pelajaran: Optional[MataPelajaranRef] = None
+    guru: GuruRef | None = None
+    kelas: KelasRef | None = None
+    mata_pelajaran: MataPelajaranRef | None = None
 
 class Message(BaseModel):
     message: str

@@ -1,4 +1,4 @@
-from typing import Optional, Literal
+from typing import Literal
 from pydantic import BaseModel, ConfigDict, field_validator, Field
 
 
@@ -65,21 +65,21 @@ class UserCreate(BaseModel):
 
 
 class UserUpdate(BaseModel):
-    username: Optional[str] = None
-    password: Optional[str] = None
-    role: Optional[str] = None
-    nama: Optional[str] = None
+    username: str | None = None
+    password: str | None = None
+    role: str | None = None
+    nama: str | None = None
 
     @field_validator("password")
     @classmethod
-    def min_length(cls, v: Optional[str]) -> Optional[str]:
+    def min_length(cls, v: str | None) -> str | None:
         if v is not None and len(v) < 6:
             raise ValueError("Password minimal 6 karakter")
         return v
 
     @field_validator("role")
     @classmethod
-    def valid_role(cls, v: Optional[str]) -> Optional[str]:
+    def valid_role(cls, v: str | None) -> str | None:
         if v is not None and v not in ("admin", "guru", "siswa"):
             raise ValueError("Role harus admin, guru, atau siswa")
         return v
